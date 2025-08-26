@@ -9,16 +9,19 @@ export default {
       fontFamily: {
         'inter': ['Inter', 'sans-serif'],
       },
-      colors: {
-        primary: '#1a1a1a',
+primary: '#1a1a1a',
         secondary: '#2d2d2d',
         accent: '#4a90e2',
+        'accent-foreground': '#ffffff',
         surface: '#f5f5f5',
         success: '#27ae60',
+        'success-foreground': '#ffffff',
         warning: '#f39c12',
+        'warning-foreground': '#ffffff',
         error: '#e74c3c',
         info: '#3498db',
       },
+      backdropBlur: {
       backdropBlur: {
         'xs': '2px',
       },
