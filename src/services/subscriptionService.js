@@ -24,19 +24,26 @@ class SubscriptionService {
 
   // Mock Stripe Checkout (replace with real API call in production)
 async mockStripeCheckout(userId) {
-    // Simulate successful payment for demo purposes - start timeout before returning
-    setTimeout(() => {
-      // Activate subscription
-      authService.activateSubscription(userId, {
-        id: `sub_${Date.now()}`,
-        status: 'active',
-        priceId: 'price_zensales_pro_monthly',
-        currentPeriodStart: Math.floor(Date.now() / 1000),
-        currentPeriodEnd: Math.floor((Date.now() + 30 * 24 * 60 * 60 * 1000) / 1000)
-      });
-    }, 2000);
+    // Simulate successful payment for demo purposes with proper async handling
+    await new Promise((resolve, reject) => {
+      setTimeout(() => {
+        try {
+          // Activate subscription
+          authService.activateSubscription(userId, {
+            id: `sub_${Date.now()}`,
+            status: 'active',
+            priceId: 'price_zensales_pro_monthly',
+            currentPeriodStart: Math.floor(Date.now() / 1000),
+            currentPeriodEnd: Math.floor((Date.now() + 30 * 24 * 60 * 60 * 1000) / 1000)
+          });
+          resolve();
+        } catch (error) {
+          reject(error);
+        }
+      }, 2000);
+    });
 
-    // Return checkout URL (in production, this would be the real Stripe Checkout URL)
+    // Return checkout URL after subscription is activated
     return {
       url: window.location.origin + '/subscription?payment=processing'
     };
