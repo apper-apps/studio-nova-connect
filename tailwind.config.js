@@ -4,12 +4,13 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
-  theme: {
+theme: {
     extend: {
       fontFamily: {
         'inter': ['Inter', 'sans-serif'],
       },
-primary: '#1a1a1a',
+      colors: {
+        primary: '#1a1a1a',
         secondary: '#2d2d2d',
         accent: '#4a90e2',
         'accent-foreground': '#ffffff',
@@ -21,7 +22,6 @@ primary: '#1a1a1a',
         error: '#e74c3c',
         info: '#3498db',
       },
-      backdropBlur: {
       backdropBlur: {
         'xs': '2px',
       },
