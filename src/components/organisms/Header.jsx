@@ -3,15 +3,18 @@ import { useNavigate } from "react-router-dom";
 import Button from "@/components/atoms/Button";
 import ApperIcon from "@/components/ApperIcon";
 import { cn } from "@/utils/cn";
-import { authService } from "@/services/authService";
+import { useAuth } from "@/services/authService";
+import { useContext } from 'react';
+import { AuthContext } from '@/App';
 
 const Header = ({ title, onMenuClick, actions, className }) => {
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const { user, subscription } = authService.useAuth();
+  const { user, subscription } = useAuth();
+  const authMethods = useContext(AuthContext);
 
   const handleLogout = () => {
-    authService.logout();
+    authMethods.logout();
     setShowUserMenu(false);
   };
 
