@@ -79,7 +79,7 @@ const Dashboard = () => {
 
         <Empty
           icon="Camera"
-          title="Welcome to IPS Studio"
+title="Welcome to ZenSales"
           description="Start by creating your first client gallery to begin managing photo sessions and sales."
           actionLabel="Create Your First Gallery"
           onAction={() => navigate("/galleries")}

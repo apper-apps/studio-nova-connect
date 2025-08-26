@@ -23,7 +23,7 @@ const Sidebar = ({ isOpen, onClose }) => {
             <ApperIcon name="Camera" size={20} className="text-white" />
           </div>
           <div className="ml-3">
-            <h1 className="text-xl font-bold text-primary">IPS Studio</h1>
+<h1 className="text-xl font-bold text-primary">ZenSales</h1>
             <p className="text-xs text-gray-600">Photo Sales Platform</p>
           </div>
         </div>
