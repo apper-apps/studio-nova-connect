@@ -53,10 +53,12 @@ async mockStripeCheckout(userId) {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    try {
+try {
       // In production, this would call your backend API
+      const portalUrl = 'https://billing.stripe.com/p/login/test_example';
+      
       return {
-        url: 'https://billing.stripe.com/p/login/test_example'
+        url: portalUrl
       };
     } catch (error) {
       console.error('Portal session error:', error);
