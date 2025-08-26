@@ -23,7 +23,7 @@ class SubscriptionService {
   }
 
   // Mock Stripe Checkout (replace with real API call in production)
-  async mockStripeCheckout(userId) {
+async mockStripeCheckout(userId) {
     // Simulate successful payment for demo purposes
     setTimeout(() => {
       // Activate subscription

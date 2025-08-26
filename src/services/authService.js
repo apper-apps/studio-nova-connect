@@ -138,17 +138,18 @@ class AuthService {
     };
   }
 
-  // React hook for auth state
-  useAuth() {
-    const [authState, setAuthState] = useState(() => this.getAuthState());
-
-    useEffect(() => {
-      const unsubscribe = this.subscribe(setAuthState);
-      return unsubscribe;
-    }, []);
-
-    return authState;
-  }
 }
 
 export const authService = new AuthService();
+
+// Custom React hook for auth state (separate from class)
+export function useAuth() {
+  const [authState, setAuthState] = useState(() => authService.getAuthState());
+
+  useEffect(() => {
+    const unsubscribe = authService.subscribe(setAuthState);
+    return unsubscribe;
+  }, []);
+
+  return authState;
+}

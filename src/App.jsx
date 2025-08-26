@@ -12,10 +12,10 @@ import Login from "@/components/pages/Login";
 import Register from "@/components/pages/Register";
 import Subscription from "@/components/pages/Subscription";
 import Settings from "@/components/pages/Settings";
-import { authService } from "@/services/authService";
+import { authService, useAuth } from "@/services/authService";
 import Loading from "@/components/ui/Loading";
 const ProtectedRoute = ({ children }) => {
-  const { user, subscription } = authService.useAuth();
+const { user, subscription } = useAuth();
   
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -29,7 +29,7 @@ const ProtectedRoute = ({ children }) => {
 };
 
 const PublicRoute = ({ children }) => {
-  const { user, subscription } = authService.useAuth();
+const { user, subscription } = useAuth();
   
   if (user && subscription?.active) {
     return <Navigate to="/" replace />;
@@ -40,7 +40,7 @@ const PublicRoute = ({ children }) => {
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, loading, subscription } = authService.useAuth();
+const { user, loading, subscription } = useAuth();
 
   useEffect(() => {
     authService.initialize();
