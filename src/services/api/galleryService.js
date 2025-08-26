@@ -1,106 +1,196 @@
-import galleriesData from "@/services/mockData/galleries.json";
-
 class GalleryService {
   constructor() {
-    this.galleries = [...galleriesData];
-    this.nextId = Math.max(...this.galleries.map(g => g.id)) + 1;
-  }
-
-  delay() {
-    return new Promise(resolve => setTimeout(resolve, Math.random() * 300 + 200));
+    // Initialize ApperClient with Project ID and Public Key
+    const { ApperClient } = window.ApperSDK;
+    this.apperClient = new ApperClient({
+      apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+      apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+    });
+    this.tableName = 'gallery_c';
   }
 
   async getAll() {
-    await this.delay();
-    return [...this.galleries].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    try {
+      const params = {
+        fields: [
+          { field: { Name: "Id" } },
+          { field: { Name: "Name" } },
+          { field: { Name: "client_id_c" } },
+          { field: { Name: "session_date_c" } },
+          { field: { Name: "created_at_c" } }
+        ],
+        orderBy: [
+          { fieldName: "created_at_c", sorttype: "DESC" }
+        ]
+      };
+
+      const response = await this.apperClient.fetchRecords(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+
+      // Transform response data for consistency with existing code
+      const galleries = response.data?.map(gallery => ({
+        ...gallery,
+        clientId: gallery.client_id_c?.Id || gallery.client_id_c,
+        sessionDate: gallery.session_date_c,
+        createdAt: gallery.created_at_c,
+        images: [] // Images will be loaded separately
+      })) || [];
+
+      return galleries;
+    } catch (error) {
+      console.error("Error fetching galleries:", error.message);
+      throw error;
+    }
   }
 
   async getById(id) {
-    await this.delay();
-    const gallery = this.galleries.find(g => g.id === id);
-    if (!gallery) {
-      throw new Error("Gallery not found");
+    try {
+      const params = {
+        fields: [
+          { field: { Name: "Id" } },
+          { field: { Name: "Name" } },
+          { field: { Name: "client_id_c" } },
+          { field: { Name: "session_date_c" } },
+          { field: { Name: "created_at_c" } }
+        ]
+      };
+
+      const response = await this.apperClient.getRecordById(this.tableName, parseInt(id), params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+
+      // Get images for this gallery
+      const imageService = await import('./imageService.js');
+      const images = await imageService.default.getByGalleryId(id);
+
+      // Transform response data for consistency
+      const gallery = {
+        ...response.data,
+        clientId: response.data.client_id_c?.Id || response.data.client_id_c,
+        sessionDate: response.data.session_date_c,
+        createdAt: response.data.created_at_c,
+        images: images || []
+      };
+
+      return gallery;
+    } catch (error) {
+      console.error(`Error fetching gallery with ID ${id}:`, error.message);
+      throw error;
     }
-    return { ...gallery, images: gallery.images ? [...gallery.images] : [] };
   }
 
   async create(galleryData) {
-    await this.delay();
-    const newGallery = {
-      id: this.nextId++,
-      ...galleryData,
-      images: galleryData.images || [],
-      createdAt: new Date().toISOString()
-    };
-    this.galleries.push(newGallery);
-    return { ...newGallery };
+    try {
+      const params = {
+        records: [{
+          // Only include updateable fields
+          Name: galleryData.name || galleryData.Name,
+          client_id_c: parseInt(galleryData.clientId || galleryData.client_id_c),
+          session_date_c: galleryData.sessionDate || galleryData.session_date_c,
+          created_at_c: new Date().toISOString()
+        }]
+      };
+
+      const response = await this.apperClient.createRecord(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+
+      if (response.results) {
+        const failedRecords = response.results.filter(result => !result.success);
+        
+        if (failedRecords.length > 0) {
+          console.error(`Failed to create gallery ${failedRecords.length} records:${JSON.stringify(failedRecords)}`);
+          throw new Error(failedRecords[0].message || 'Failed to create gallery');
+        }
+
+        // Transform response data for consistency
+        const createdGallery = {
+          ...response.results[0].data,
+          clientId: response.results[0].data.client_id_c?.Id || response.results[0].data.client_id_c,
+          sessionDate: response.results[0].data.session_date_c,
+          createdAt: response.results[0].data.created_at_c,
+          images: []
+        };
+
+        return createdGallery;
+      }
+    } catch (error) {
+      console.error("Error creating gallery:", error.message);
+      throw error;
+    }
   }
 
   async update(id, galleryData) {
-    await this.delay();
-    const index = this.galleries.findIndex(g => g.id === id);
-    if (index === -1) {
-      throw new Error("Gallery not found");
+    try {
+      const params = {
+        records: [{
+          Id: parseInt(id),
+          // Only include updateable fields
+          Name: galleryData.name || galleryData.Name,
+          client_id_c: parseInt(galleryData.clientId || galleryData.client_id_c),
+          session_date_c: galleryData.sessionDate || galleryData.session_date_c
+        }]
+      };
+
+      const response = await this.apperClient.updateRecord(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+
+      if (response.results) {
+        const failedRecords = response.results.filter(result => !result.success);
+        
+        if (failedRecords.length > 0) {
+          console.error(`Failed to update gallery ${failedRecords.length} records:${JSON.stringify(failedRecords)}`);
+          throw new Error(failedRecords[0].message || 'Failed to update gallery');
+        }
+
+        // Transform response data for consistency
+        const updatedGallery = {
+          ...response.results[0].data,
+          clientId: response.results[0].data.client_id_c?.Id || response.results[0].data.client_id_c,
+          sessionDate: response.results[0].data.session_date_c,
+          createdAt: response.results[0].data.created_at_c
+        };
+
+        return updatedGallery;
+      }
+    } catch (error) {
+      console.error("Error updating gallery:", error.message);
+      throw error;
     }
-    this.galleries[index] = { ...this.galleries[index], ...galleryData };
-    return { ...this.galleries[index] };
   }
 
   async delete(id) {
-    await this.delay();
-    const index = this.galleries.findIndex(g => g.id === id);
-    if (index === -1) {
-      throw new Error("Gallery not found");
-    }
-    this.galleries.splice(index, 1);
-    return true;
-  }
+    try {
+      const params = {
+        RecordIds: [parseInt(id)]
+      };
 
-  async addImages(galleryId, images) {
-    await this.delay();
-    const gallery = this.galleries.find(g => g.id === galleryId);
-    if (!gallery) {
-      throw new Error("Gallery not found");
-    }
-    
-    const nextImageId = Math.max(...this.galleries.flatMap(g => g.images?.map(img => img.id) || []), 0) + 1;
-    const newImages = images.map((image, index) => ({
-      id: nextImageId + index,
-      galleryId,
-      ...image,
-      rating: "unrated",
-      order: (gallery.images?.length || 0) + index + 1
-    }));
+      const response = await this.apperClient.deleteRecord(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
 
-    gallery.images = [...(gallery.images || []), ...newImages];
-    return { ...gallery };
-  }
-
-  async removeImage(galleryId, imageId) {
-    await this.delay();
-    const gallery = this.galleries.find(g => g.id === galleryId);
-    if (!gallery) {
-      throw new Error("Gallery not found");
+      return true;
+    } catch (error) {
+      console.error("Error deleting gallery:", error.message);
+      throw error;
     }
-    
-    gallery.images = gallery.images?.filter(img => img.id !== imageId) || [];
-    return { ...gallery };
-  }
-
-  async updateImageRating(galleryId, imageId, rating) {
-    await this.delay();
-    const gallery = this.galleries.find(g => g.id === galleryId);
-    if (!gallery) {
-      throw new Error("Gallery not found");
-    }
-    
-    const image = gallery.images?.find(img => img.id === imageId);
-    if (!image) {
-      throw new Error("Image not found");
-    }
-    
-    image.rating = rating;
-    return { ...gallery };
   }
 }
 

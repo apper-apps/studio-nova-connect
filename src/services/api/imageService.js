@@ -1,0 +1,153 @@
+class ImageService {
+  constructor() {
+    // Initialize ApperClient with Project ID and Public Key
+    const { ApperClient } = window.ApperSDK;
+    this.apperClient = new ApperClient({
+      apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+      apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+    });
+    this.tableName = 'image_c';
+  }
+
+  async getByGalleryId(galleryId) {
+    try {
+      const params = {
+        fields: [
+          { field: { Name: "Id" } },
+          { field: { Name: "Name" } },
+          { field: { Name: "original_url_c" } },
+          { field: { Name: "proofing_url_c" } },
+          { field: { Name: "thumbnail_url_c" } },
+          { field: { Name: "rating_c" } },
+          { field: { Name: "order_c" } },
+          { field: { Name: "gallery_id_c" } }
+        ],
+        where: [
+          {
+            FieldName: "gallery_id_c",
+            Operator: "EqualTo",
+            Values: [parseInt(galleryId)]
+          }
+        ],
+        orderBy: [
+          { fieldName: "order_c", sorttype: "ASC" }
+        ]
+      };
+
+      const response = await this.apperClient.fetchRecords(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+
+      // Transform response data for consistency with existing code
+      const images = response.data?.map(image => ({
+        ...image,
+        id: image.Id,
+        galleryId: image.gallery_id_c?.Id || image.gallery_id_c,
+        originalUrl: image.original_url_c,
+        proofingUrl: image.proofing_url_c,
+        thumbnailUrl: image.thumbnail_url_c,
+        rating: image.rating_c || "unrated",
+        order: image.order_c || 1
+      })) || [];
+
+      return images;
+    } catch (error) {
+      console.error("Error fetching images for gallery:", error.message);
+      throw error;
+    }
+  }
+
+  async updateRating(imageId, rating) {
+    try {
+      const params = {
+        records: [{
+          Id: parseInt(imageId),
+          rating_c: rating
+        }]
+      };
+
+      const response = await this.apperClient.updateRecord(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+
+      if (response.results) {
+        const failedRecords = response.results.filter(result => !result.success);
+        
+        if (failedRecords.length > 0) {
+          console.error(`Failed to update image rating ${failedRecords.length} records:${JSON.stringify(failedRecords)}`);
+          throw new Error(failedRecords[0].message || 'Failed to update image rating');
+        }
+
+        return response.results[0].data;
+      }
+    } catch (error) {
+      console.error("Error updating image rating:", error.message);
+      throw error;
+    }
+  }
+
+  async create(imageData) {
+    try {
+      const params = {
+        records: [{
+          Name: imageData.Name || `Image ${Date.now()}`,
+          original_url_c: imageData.originalUrl || imageData.original_url_c,
+          proofing_url_c: imageData.proofingUrl || imageData.proofing_url_c,
+          thumbnail_url_c: imageData.thumbnailUrl || imageData.thumbnail_url_c,
+          rating_c: imageData.rating || imageData.rating_c || "unrated",
+          order_c: imageData.order || imageData.order_c || 1,
+          gallery_id_c: parseInt(imageData.galleryId || imageData.gallery_id_c)
+        }]
+      };
+
+      const response = await this.apperClient.createRecord(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+
+      if (response.results) {
+        const failedRecords = response.results.filter(result => !result.success);
+        
+        if (failedRecords.length > 0) {
+          console.error(`Failed to create image ${failedRecords.length} records:${JSON.stringify(failedRecords)}`);
+          throw new Error(failedRecords[0].message || 'Failed to create image');
+        }
+
+        return response.results[0].data;
+      }
+    } catch (error) {
+      console.error("Error creating image:", error.message);
+      throw error;
+    }
+  }
+
+  async delete(imageId) {
+    try {
+      const params = {
+        RecordIds: [parseInt(imageId)]
+      };
+
+      const response = await this.apperClient.deleteRecord(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error deleting image:", error.message);
+      throw error;
+    }
+  }
+}
+
+export default new ImageService();

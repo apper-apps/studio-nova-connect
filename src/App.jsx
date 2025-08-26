@@ -1,74 +1,161 @@
-import React, { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import React, { createContext, useEffect, useState } from "react";
+import { BrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { ToastContainer } from "react-toastify";
-import Sidebar from "@/components/organisms/Sidebar";
-import Header from "@/components/organisms/Header";
-import Dashboard from "@/components/pages/Dashboard";
-import Galleries from "@/components/pages/Galleries";
-import GalleryView from "@/components/pages/GalleryView";
+import { clearUser, setUser } from "./store/userSlice";
+import Signup from "@/components/pages/Signup";
+import Callback from "@/components/pages/Callback";
+import ErrorPage from "@/components/pages/ErrorPage";
+import ResetPassword from "@/components/pages/ResetPassword";
+import PromptPassword from "@/components/pages/PromptPassword";
 import Products from "@/components/pages/Products";
 import CurrentSession from "@/components/pages/CurrentSession";
 import Login from "@/components/pages/Login";
-import Register from "@/components/pages/Register";
-import Subscription from "@/components/pages/Subscription";
+import Dashboard from "@/components/pages/Dashboard";
+import GalleryView from "@/components/pages/GalleryView";
 import Settings from "@/components/pages/Settings";
-import { authService, useAuth } from "@/services/authService";
+import Galleries from "@/components/pages/Galleries";
+import Sidebar from "@/components/organisms/Sidebar";
+import Header from "@/components/organisms/Header";
 import Loading from "@/components/ui/Loading";
+
+// Create auth context
+export const AuthContext = createContext(null);
+
 const ProtectedRoute = ({ children }) => {
-const { user, subscription } = useAuth();
+  const { isAuthenticated } = useSelector((state) => state.user);
   
-  if (!user) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
-  }
-  
-  if (!subscription?.active) {
-    return <Navigate to="/subscription" replace />;
   }
   
   return children;
 };
 
 const PublicRoute = ({ children }) => {
-const { user, subscription } = useAuth();
+  const { isAuthenticated } = useSelector((state) => state.user);
   
-  if (user && subscription?.active) {
+  if (isAuthenticated) {
     return <Navigate to="/" replace />;
   }
   
   return children;
 };
 
-function App() {
+function AppContent() {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-const { user, loading, subscription } = useAuth();
-
+  const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Get authentication status with proper error handling
+  const userState = useSelector((state) => state.user);
+  const isAuthenticated = userState?.isAuthenticated || false;
+  
+  // Initialize ApperUI once when the app loads
   useEffect(() => {
-    authService.initialize();
-  }, []);
-
-  if (loading) {
-    return <Loading />;
+    const { ApperClient, ApperUI } = window.ApperSDK;
+    
+    const client = new ApperClient({
+      apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+      apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+    });
+    
+    // Initialize but don't show login yet
+    ApperUI.setup(client, {
+      target: '#authentication',
+      clientId: import.meta.env.VITE_APPER_PROJECT_ID,
+      view: 'both',
+      onSuccess: function (user) {
+        setIsInitialized(true);
+        // CRITICAL: This exact currentPath logic must be preserved in all implementations
+        // DO NOT simplify or modify this pattern as it ensures proper redirection flow
+        let currentPath = window.location.pathname + window.location.search;
+        let redirectPath = new URLSearchParams(window.location.search).get('redirect');
+        const isAuthPage = currentPath.includes('/login') || currentPath.includes('/signup') || 
+                           currentPath.includes('/callback') || currentPath.includes('/error') || 
+                           currentPath.includes('/prompt-password') || currentPath.includes('/reset-password');
+        
+        if (user) {
+          // User is authenticated
+          if (redirectPath) {
+            navigate(redirectPath);
+          } else if (!isAuthPage) {
+            if (!currentPath.includes('/login') && !currentPath.includes('/signup')) {
+              navigate(currentPath);
+            } else {
+              navigate('/');
+            }
+          } else {
+            navigate('/');
+          }
+          // Store user information in Redux
+          dispatch(setUser(JSON.parse(JSON.stringify(user))));
+        } else {
+          // User is not authenticated
+          if (!isAuthPage) {
+            navigate(
+              currentPath.includes('/signup')
+                ? `/signup?redirect=${currentPath}`
+                : currentPath.includes('/login')
+                ? `/login?redirect=${currentPath}`
+                : '/login'
+            );
+          } else if (redirectPath) {
+            if (
+              !['error', 'signup', 'login', 'callback', 'prompt-password', 'reset-password'].some((path) => currentPath.includes(path))
+            ) {
+              navigate(`/login?redirect=${redirectPath}`);
+            } else {
+              navigate(currentPath);
+            }
+          } else if (isAuthPage) {
+            navigate(currentPath);
+          } else {
+            navigate('/login');
+          }
+          dispatch(clearUser());
+        }
+      },
+      onError: function(error) {
+        console.error("Authentication failed:", error);
+      }
+    });
+  }, [navigate, dispatch]);
+  
+  // Authentication methods to share via context
+  const authMethods = {
+    isInitialized,
+    logout: async () => {
+      try {
+        const { ApperUI } = window.ApperSDK;
+        await ApperUI.logout();
+        dispatch(clearUser());
+        navigate('/login');
+      } catch (error) {
+        console.error("Logout failed:", error);
+      }
+    }
+  };
+  
+  // Don't render routes until initialization is complete
+  if (!isInitialized) {
+    return <div className="loading flex items-center justify-center p-6 h-full w-full"><svg className="animate-spin" xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4"></path><path d="m16.2 7.8 2.9-2.9"></path><path d="M18 12h4"></path><path d="m16.2 16.2 2.9 2.9"></path><path d="M12 18v4"></path><path d="m4.9 19.1 2.9-2.9"></path><path d="M2 12h4"></path><path d="m4.9 4.9 2.9 2.9"></path></svg></div>;
   }
 
-  // Show auth layout for non-authenticated users
-  if (!user) {
+  if (!isAuthenticated) {
     return (
-      <BrowserRouter>
-        <div className="min-h-screen bg-gray-50">
+      <AuthContext.Provider value={authMethods}>
+        <div className="min-h-screen">
           <Routes>
-            <Route path="/login" element={
-              <PublicRoute>
-                <Login />
-              </PublicRoute>
-            } />
-            <Route path="/register" element={
-              <PublicRoute>
-                <Register />
-              </PublicRoute>
-            } />
+            <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+            <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+            <Route path="/callback" element={<Callback />} />
+            <Route path="/error" element={<ErrorPage />} />
+            <Route path="/prompt-password/:appId/:emailAddress/:provider" element={<PromptPassword />} />
+            <Route path="/reset-password/:appId/:fields" element={<ResetPassword />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
-          
           <ToastContainer
             position="top-right"
             autoClose={3000}
@@ -81,102 +168,54 @@ const { user, loading, subscription } = useAuth();
             pauseOnHover
           />
         </div>
-      </BrowserRouter>
+      </AuthContext.Provider>
     );
   }
 
-  // Show subscription page for users without active subscription
-  if (!subscription?.active) {
-    return (
-      <BrowserRouter>
-        <div className="min-h-screen bg-gray-50">
-          <Routes>
-            <Route path="/subscription" element={<Subscription />} />
-            <Route path="*" element={<Navigate to="/subscription" replace />} />
-          </Routes>
-          
-          <ToastContainer
-            position="top-right"
-            autoClose={3000}
-            hideProgressBar={false}
-            newestOnTop={false}
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
+  return (
+    <AuthContext.Provider value={authMethods}>
+      <div className="flex h-screen bg-surface-50">
+        {/* Sidebar */}
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col overflow-hidden lg:ml-64">
+          <Header
+            title="ZenSales"
+            onMenuClick={() => setSidebarOpen(true)}
           />
+          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-surface-50 p-6">
+            <Routes>
+              <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/galleries" element={<ProtectedRoute><Galleries /></ProtectedRoute>} />
+              <Route path="/gallery/:id" element={<ProtectedRoute><GalleryView /></ProtectedRoute>} />
+              <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
+              <Route path="/session" element={<ProtectedRoute><CurrentSession /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </main>
         </div>
-      </BrowserRouter>
-    );
-  }
+      </div>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
+    </AuthContext.Provider>
+  );
+}
 
-  // Show main app for authenticated users with active subscription
+function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-white">
-        <div className="flex h-screen">
-          {/* Sidebar */}
-          <Sidebar 
-            isOpen={sidebarOpen} 
-            onClose={() => setSidebarOpen(false)} 
-          />
-          
-          {/* Main Content */}
-          <div className="flex-1 flex flex-col lg:ml-64">
-            <Header
-              onMenuClick={() => setSidebarOpen(true)}
-            />
-            
-            <main className="flex-1 overflow-y-auto">
-              <Routes>
-                <Route path="/" element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                } />
-                <Route path="/galleries" element={
-                  <ProtectedRoute>
-                    <Galleries />
-                  </ProtectedRoute>
-                } />
-                <Route path="/gallery/:id" element={
-                  <ProtectedRoute>
-                    <GalleryView />
-                  </ProtectedRoute>
-                } />
-                <Route path="/products" element={
-                  <ProtectedRoute>
-                    <Products />
-                  </ProtectedRoute>
-                } />
-                <Route path="/session" element={
-                  <ProtectedRoute>
-                    <CurrentSession />
-                  </ProtectedRoute>
-                } />
-                <Route path="/settings" element={
-                  <ProtectedRoute>
-                    <Settings />
-                  </ProtectedRoute>
-                } />
-              </Routes>
-            </main>
-          </div>
-        </div>
-
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-        />
-      </div>
+      <AppContent />
     </BrowserRouter>
   );
 }
