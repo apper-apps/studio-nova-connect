@@ -10,11 +10,7 @@ import SlideshowViewer from "@/components/organisms/SlideshowViewer";
 import GalleryGrid from "@/components/organisms/GalleryGrid";
 import Error from "@/components/ui/Error";
 import Loading from "@/components/ui/Loading";
-import Modal from "@/components/ui/Modal";
-import ModalHeader from "@/components/ui/ModalHeader";
-import ModalTitle from "@/components/ui/ModalTitle";
-import ModalContent from "@/components/ui/ModalContent";
-import ModalFooter from "@/components/ui/ModalFooter";
+import { Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter } from "@/components/atoms/Modal";
 import clientService from "@/services/api/clientService";
 import galleryService from "@/services/api/galleryService";
 
