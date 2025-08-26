@@ -12,12 +12,13 @@ class GalleryService {
   async getAll() {
     try {
       const params = {
-        fields: [
+fields: [
           { field: { Name: "Id" } },
           { field: { Name: "Name" } },
           { field: { Name: "client_id_c" } },
           { field: { Name: "session_date_c" } },
-          { field: { Name: "created_at_c" } }
+          { field: { Name: "created_at_c" } },
+          { field: { Name: "shareable_url_c" } }
         ],
         orderBy: [
           { fieldName: "created_at_c", sorttype: "DESC" }
@@ -32,11 +33,12 @@ class GalleryService {
       }
 
       // Transform response data for consistency with existing code
-      const galleries = response.data?.map(gallery => ({
+const galleries = response.data?.map(gallery => ({
         ...gallery,
         clientId: gallery.client_id_c?.Id || gallery.client_id_c,
         sessionDate: gallery.session_date_c,
         createdAt: gallery.created_at_c,
+        shareableUrl: gallery.shareable_url_c,
         images: [] // Images will be loaded separately
       })) || [];
 
@@ -50,12 +52,13 @@ class GalleryService {
   async getById(id) {
     try {
       const params = {
-        fields: [
+fields: [
           { field: { Name: "Id" } },
           { field: { Name: "Name" } },
           { field: { Name: "client_id_c" } },
           { field: { Name: "session_date_c" } },
-          { field: { Name: "created_at_c" } }
+          { field: { Name: "created_at_c" } },
+          { field: { Name: "shareable_url_c" } }
         ]
       };
 
@@ -71,11 +74,12 @@ class GalleryService {
       const images = await imageService.default.getByGalleryId(id);
 
       // Transform response data for consistency
-      const gallery = {
+const gallery = {
         ...response.data,
         clientId: response.data.client_id_c?.Id || response.data.client_id_c,
         sessionDate: response.data.session_date_c,
         createdAt: response.data.created_at_c,
+        shareableUrl: response.data.shareable_url_c,
         images: images || []
       };
 
@@ -90,11 +94,12 @@ class GalleryService {
     try {
       const params = {
         records: [{
-          // Only include updateable fields
+// Only include updateable fields
           Name: galleryData.name || galleryData.Name,
           client_id_c: parseInt(galleryData.clientId || galleryData.client_id_c),
           session_date_c: galleryData.sessionDate || galleryData.session_date_c,
-          created_at_c: new Date().toISOString()
+          created_at_c: new Date().toISOString(),
+          shareable_url_c: galleryData.shareableUrl || null
         }]
       };
 
@@ -114,11 +119,12 @@ class GalleryService {
         }
 
         // Transform response data for consistency
-        const createdGallery = {
+const createdGallery = {
           ...response.results[0].data,
           clientId: response.results[0].data.client_id_c?.Id || response.results[0].data.client_id_c,
           sessionDate: response.results[0].data.session_date_c,
           createdAt: response.results[0].data.created_at_c,
+          shareableUrl: response.results[0].data.shareable_url_c,
           images: []
         };
 
@@ -133,12 +139,13 @@ class GalleryService {
   async update(id, galleryData) {
     try {
       const params = {
-        records: [{
+records: [{
           Id: parseInt(id),
           // Only include updateable fields
           Name: galleryData.name || galleryData.Name,
           client_id_c: parseInt(galleryData.clientId || galleryData.client_id_c),
-          session_date_c: galleryData.sessionDate || galleryData.session_date_c
+          session_date_c: galleryData.sessionDate || galleryData.session_date_c,
+          shareable_url_c: galleryData.shareableUrl || galleryData.shareable_url_c
         }]
       };
 
@@ -157,12 +164,13 @@ class GalleryService {
           throw new Error(failedRecords[0].message || 'Failed to update gallery');
         }
 
-        // Transform response data for consistency
+// Transform response data for consistency
         const updatedGallery = {
           ...response.results[0].data,
           clientId: response.results[0].data.client_id_c?.Id || response.results[0].data.client_id_c,
           sessionDate: response.results[0].data.session_date_c,
-          createdAt: response.results[0].data.created_at_c
+          createdAt: response.results[0].data.created_at_c,
+          shareableUrl: response.results[0].data.shareable_url_c
         };
 
         return updatedGallery;

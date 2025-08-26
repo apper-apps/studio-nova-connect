@@ -1,36 +1,52 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import Button from "@/components/atoms/Button";
 import ApperIcon from "@/components/ApperIcon";
-import GalleryGrid from "@/components/organisms/GalleryGrid";
-import SlideshowViewer from "@/components/organisms/SlideshowViewer";
+import FormField from "@/components/molecules/FormField";
+import Button from "@/components/atoms/Button";
+import Settings from "@/components/pages/Settings";
 import ComparisonModal from "@/components/organisms/ComparisonModal";
-import Loading from "@/components/ui/Loading";
+import SlideshowViewer from "@/components/organisms/SlideshowViewer";
+import GalleryGrid from "@/components/organisms/GalleryGrid";
 import Error from "@/components/ui/Error";
-import galleryService from "@/services/api/galleryService";
+import Loading from "@/components/ui/Loading";
+import Modal from "@/components/ui/Modal";
+import ModalHeader from "@/components/ui/ModalHeader";
+import ModalTitle from "@/components/ui/ModalTitle";
+import ModalContent from "@/components/ui/ModalContent";
+import ModalFooter from "@/components/ui/ModalFooter";
 import clientService from "@/services/api/clientService";
+import galleryService from "@/services/api/galleryService";
 
 const GalleryView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [gallery, setGallery] = useState(null);
   const [client, setClient] = useState(null);
-  const [selectedImages, setSelectedImages] = useState([]);
+const [selectedImages, setSelectedImages] = useState([]);
   const [blackWhiteImages, setBlackWhiteImages] = useState([]);
   const [activeFilter, setActiveFilter] = useState("all");
   const [showSlideshow, setShowSlideshow] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [publishing, setPublishing] = useState(false);
+  const [gallerySettings, setGallerySettings] = useState(null);
+  const [settingsForm, setSettingsForm] = useState({
+    password: "",
+    expiryDate: "",
+    enableDownloads: false
+});
 
   useEffect(() => {
     if (id) {
       loadGallery();
+      loadGallerySettings();
     }
   }, [id]);
 
-  const loadGallery = async () => {
+const loadGallery = async () => {
     try {
       setLoading(true);
       setError("");
@@ -47,6 +63,75 @@ const GalleryView = () => {
       console.error("Error loading gallery:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadGallerySettings = async () => {
+    try {
+      const { default: gallerySettingService } = await import("@/services/api/gallerySettingService");
+      const settings = await gallerySettingService.getByGalleryId(parseInt(id));
+      setGallerySettings(settings);
+      
+      if (settings) {
+        setSettingsForm({
+          password: settings.password || "",
+          expiryDate: settings.expiryDate || "",
+          enableDownloads: settings.enableDownloads || false
+        });
+      }
+    } catch (err) {
+      console.error("Error loading gallery settings:", err);
+    }
+  };
+
+  const handlePublishToWeb = async () => {
+    if (!gallery) return;
+    
+    try {
+      setPublishing(true);
+      
+      // Generate unique shareable URL
+      const shareableUrl = `gallery-${gallery.Id}-${Date.now().toString(36)}`;
+      
+      // Update gallery with shareable URL
+      const updatedGallery = await galleryService.update(gallery.Id, {
+        ...gallery,
+        shareableUrl
+      });
+      
+      setGallery(updatedGallery);
+      toast.success("Gallery published! Shareable link created.");
+    } catch (err) {
+      toast.error("Failed to publish gallery");
+      console.error("Error publishing gallery:", err);
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const handleSaveSettings = async (e) => {
+    e.preventDefault();
+    
+    try {
+      const { default: gallerySettingService } = await import("@/services/api/gallerySettingService");
+      
+      const settingData = {
+        ...settingsForm,
+        galleryId: parseInt(id)
+      };
+
+      if (gallerySettings) {
+        await gallerySettingService.update(gallerySettings.Id, settingData);
+      } else {
+        await gallerySettingService.create(settingData);
+      }
+      
+      await loadGallerySettings();
+      setShowSettings(false);
+      toast.success("Gallery settings saved successfully!");
+    } catch (err) {
+      toast.error("Failed to save gallery settings");
+      console.error("Error saving gallery settings:", err);
     }
   };
 
@@ -131,7 +216,7 @@ const GalleryView = () => {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+<div className="flex items-center justify-between">
         <div>
           <Button
             variant="ghost"
@@ -145,17 +230,58 @@ const GalleryView = () => {
           <p className="text-gray-600 mt-1">
             {client ? `${client.firstName} ${client.lastName}` : "Unknown Client"} • {gallery.images?.length || 0} images
           </p>
+          {gallery.shareableUrl && (
+            <p className="text-sm text-success mt-1 flex items-center gap-2">
+              <ApperIcon name="Globe" size={14} />
+              Published to web
+            </p>
+          )}
         </div>
-        <Button
-          onClick={() => navigate(`/session?galleryId=${gallery.id}`)}
-          className="flex items-center gap-2"
-        >
-          <ApperIcon name="Play" size={16} />
-          Start Session
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowSettings(true)}
+            className="flex items-center gap-2"
+          >
+            <ApperIcon name="Settings" size={16} />
+            Gallery Settings
+          </Button>
+          
+          {gallery.shareableUrl ? (
+            <Button
+              variant="outline"
+              onClick={() => {
+                const url = `${window.location.origin}/gallery/share/${gallery.shareableUrl}`;
+                navigator.clipboard.writeText(url);
+                toast.success("Shareable link copied to clipboard!");
+              }}
+              className="flex items-center gap-2"
+            >
+              <ApperIcon name="Link" size={16} />
+              Copy Link
+            </Button>
+          ) : (
+            <Button
+              onClick={handlePublishToWeb}
+              disabled={publishing}
+              className="flex items-center gap-2"
+            >
+              <ApperIcon name="Globe" size={16} />
+              {publishing ? "Publishing..." : "Publish to Web"}
+            </Button>
+          )}
+          
+          <Button
+            onClick={() => navigate(`/session?galleryId=${gallery.id}`)}
+            className="flex items-center gap-2"
+          >
+            <ApperIcon name="Play" size={16} />
+            Start Session
+          </Button>
+        </div>
       </div>
 
-      {/* Gallery Grid */}
+{/* Gallery Grid */}
       <GalleryGrid
         images={gallery.images || []}
         selectedImages={selectedImages}
@@ -183,6 +309,53 @@ const GalleryView = () => {
         images={selectedImages}
         onRatingChange={handleRatingChange}
       />
+
+      {/* Gallery Settings Modal */}
+      <Modal isOpen={showSettings} onClose={() => setShowSettings(false)} size="lg">
+        <form onSubmit={handleSaveSettings}>
+          <ModalHeader>
+            <ModalTitle>Gallery Settings</ModalTitle>
+          </ModalHeader>
+          <ModalContent className="space-y-4">
+            <FormField
+              label="Password Protection"
+              type="password"
+              value={settingsForm.password}
+              onChange={(e) => setSettingsForm(prev => ({ ...prev, password: e.target.value }))}
+              placeholder="Leave empty for no password protection"
+            />
+            
+            <FormField
+              label="Expiry Date"
+              type="date"
+              value={settingsForm.expiryDate}
+              onChange={(e) => setSettingsForm(prev => ({ ...prev, expiryDate: e.target.value }))}
+              placeholder="Leave empty for no expiry"
+            />
+            
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="enableDownloads"
+                checked={settingsForm.enableDownloads}
+                onChange={(e) => setSettingsForm(prev => ({ ...prev, enableDownloads: e.target.checked }))}
+                className="w-4 h-4 text-accent focus:ring-accent border-gray-300 rounded"
+              />
+              <label htmlFor="enableDownloads" className="text-sm font-medium text-primary">
+                Enable client downloads
+              </label>
+            </div>
+          </ModalContent>
+          <ModalFooter>
+            <Button type="button" variant="outline" onClick={() => setShowSettings(false)}>
+              Cancel
+            </Button>
+            <Button type="submit">
+              Save Settings
+            </Button>
+          </ModalFooter>
+        </form>
+</Modal>
     </div>
   );
 };

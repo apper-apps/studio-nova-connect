@@ -15,6 +15,8 @@ import Dashboard from "@/components/pages/Dashboard";
 import GalleryView from "@/components/pages/GalleryView";
 import Settings from "@/components/pages/Settings";
 import Galleries from "@/components/pages/Galleries";
+import PublicGallery from "@/components/pages/PublicGallery";
+import ShoppingCart from "@/components/pages/ShoppingCart";
 import Sidebar from "@/components/organisms/Sidebar";
 import Header from "@/components/organisms/Header";
 import Loading from "@/components/ui/Loading";
@@ -147,13 +149,15 @@ function AppContent() {
     return (
       <AuthContext.Provider value={authMethods}>
         <div className="min-h-screen">
-          <Routes>
+<Routes>
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
             <Route path="/callback" element={<Callback />} />
             <Route path="/error" element={<ErrorPage />} />
             <Route path="/prompt-password/:appId/:emailAddress/:provider" element={<PromptPassword />} />
             <Route path="/reset-password/:appId/:fields" element={<ResetPassword />} />
+            <Route path="/gallery/share/:url" element={<PublicGallery />} />
+            <Route path="/cart" element={<ShoppingCart />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
           <ToastContainer

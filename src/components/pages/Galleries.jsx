@@ -188,12 +188,21 @@ const Galleries = () => {
             const stats = getGalleryStats(gallery);
             
             return (
-              <motion.div
+<motion.div
                 key={gallery.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
+                className="relative"
               >
+                {gallery.shareableUrl && (
+                  <div className="absolute top-2 right-2 z-10">
+                    <div className="flex items-center gap-1 px-2 py-1 bg-success text-white text-xs rounded-full">
+                      <ApperIcon name="Globe" size={12} />
+                      Published
+                    </div>
+                  </div>
+                )}
                 <Card className="group cursor-pointer hover:shadow-lg transition-all duration-200">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg">{gallery.name}</CardTitle>
