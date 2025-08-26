@@ -25,7 +25,7 @@ class SubscriptionService {
   // Mock Stripe Checkout (replace with real API call in production)
 async mockStripeCheckout(userId) {
     // Simulate successful payment for demo purposes with proper async handling
-    await new Promise((resolve, reject) => {
+return new Promise((resolve, reject) => {
       setTimeout(() => {
         try {
           // Activate subscription
