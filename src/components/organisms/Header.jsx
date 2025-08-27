@@ -7,20 +7,25 @@ import { useAuth } from "@/services/authService";
 import { useContext } from 'react';
 import { AuthContext } from '@/App';
 
-const Header = ({ title, onMenuClick, actions, className }) => {
+const Header = ({ title, onMenuClick, actions, className, ipsMode, onModeChange }) => {
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const { user, subscription } = useAuth();
   const authMethods = useContext(AuthContext);
 
+  const modes = [
+    { id: 'gallery', label: 'Gallery', icon: 'Images' },
+    { id: 'compare', label: 'Compare', icon: 'Eye' },
+    { id: 'slideshow', label: 'Slideshow', icon: 'Play' }
+  ];
   const handleLogout = () => {
     authMethods.logout();
     setShowUserMenu(false);
   };
 
-  return (
+return (
     <header className={cn(
-      "bg-white border-b border-gray-200 px-4 lg:px-6 py-4 flex items-center justify-between",
+      "bg-white border-b border-gray-200 px-4 lg:px-6 py-3 flex items-center justify-between",
       className
     )}>
       <div className="flex items-center">
@@ -35,10 +40,30 @@ const Header = ({ title, onMenuClick, actions, className }) => {
         </Button>
         
         <div>
-          <h1 className="text-2xl font-bold text-primary">{title}</h1>
+          <h1 className="text-xl font-bold text-primary">{title}</h1>
         </div>
       </div>
       
+      {/* IPS Mode Switcher - only show in gallery view */}
+      {ipsMode && onModeChange && (
+        <div className="flex items-center bg-surface-50 rounded-lg p-1 border">
+          {modes.map((mode) => (
+            <button
+              key={mode.id}
+              onClick={() => onModeChange(mode.id)}
+              className={cn(
+                "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all",
+                ipsMode === mode.id
+                  ? "bg-white text-accent shadow-sm"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
+              )}
+            >
+              <ApperIcon name={mode.icon} size={16} />
+              <span className="hidden sm:inline">{mode.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
       <div className="flex items-center gap-4">
         {actions && (
           <div className="flex items-center gap-2">

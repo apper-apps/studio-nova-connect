@@ -19,6 +19,7 @@ import PublicGallery from "@/components/pages/PublicGallery";
 import ShoppingCart from "@/components/pages/ShoppingCart";
 import Sidebar from "@/components/organisms/Sidebar";
 import Header from "@/components/organisms/Header";
+import IPSLayout from "@/components/organisms/IPSLayout";
 import Loading from "@/components/ui/Loading";
 
 // Create auth context
@@ -176,6 +177,8 @@ function AppContent() {
     );
   }
 
+const [ipsMode, setIpsMode] = useState('gallery');
+
   return (
     <AuthContext.Provider value={authMethods}>
       <div className="flex h-screen bg-surface-50">
@@ -187,12 +190,14 @@ function AppContent() {
           <Header
             title="ZenSales"
             onMenuClick={() => setSidebarOpen(true)}
+            ipsMode={ipsMode}
+            onModeChange={setIpsMode}
           />
-          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-surface-50 p-6">
+          <main className="flex-1 overflow-hidden bg-surface-50">
             <Routes>
               <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/galleries" element={<ProtectedRoute><Galleries /></ProtectedRoute>} />
-              <Route path="/gallery/:id" element={<ProtectedRoute><GalleryView /></ProtectedRoute>} />
+              <Route path="/gallery/:id" element={<ProtectedRoute><IPSLayout mode={ipsMode} /></ProtectedRoute>} />
               <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
               <Route path="/session" element={<ProtectedRoute><CurrentSession /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
