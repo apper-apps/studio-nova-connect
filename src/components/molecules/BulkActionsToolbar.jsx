@@ -7,6 +7,7 @@ const BulkActionsToolbar = ({
   selectedCount = 0, 
   onBulkRating, 
   onClearSelection,
+  onExport,
   className 
 }) => {
   const ratings = [
@@ -64,6 +65,16 @@ const BulkActionsToolbar = ({
       </div>
 
       {/* Clear Selection */}
+<Button
+        variant="outline"
+        size="sm"
+        onClick={() => onExport && onExport()}
+        className="flex items-center gap-1.5 px-3 py-1.5"
+      >
+        <ApperIcon name="Download" size={14} />
+        <span className="text-xs">Export</span>
+      </Button>
+      
       <Button
         variant="outline"
         size="sm"

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@/components/atoms/Modal";
+import imageExportService from "@/services/api/imageExportService";
 import ApperIcon from "@/components/ApperIcon";
 import FormField from "@/components/molecules/FormField";
 import Button from "@/components/atoms/Button";
@@ -10,10 +12,9 @@ import SlideshowViewer from "@/components/organisms/SlideshowViewer";
 import GalleryGrid from "@/components/organisms/GalleryGrid";
 import Error from "@/components/ui/Error";
 import Loading from "@/components/ui/Loading";
-import { Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter } from "@/components/atoms/Modal";
+import imageService from "@/services/api/imageService";
 import clientService from "@/services/api/clientService";
 import galleryService from "@/services/api/galleryService";
-import imageService from "@/services/api/imageService";
 const GalleryView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -209,6 +210,40 @@ const handleRatingChange = async (imageId, rating) => {
       setLoading(false);
     }
   };
+const handleExport = async () => {
+    if (selectedImages.length === 0) {
+      toast.error('No images selected for export');
+      return;
+    }
+try {
+      // Get full image data for selected images
+      const selectedImageData = gallery.images.filter(img => selectedImages.some(selected => selected.id === img.id));
+      
+      // Generate CSV content
+      const csvContent = imageExportService.generateCSV(selectedImageData);
+      
+      // Create and trigger download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `gallery-${gallery?.Name || 'export'}-${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      // Create export selections in database for tracking
+      await imageExportService.createExportSelections(selectedImages);
+
+      toast.success(`Exported ${selectedImages.length} images successfully`);
+      setSelectedImages([]); // Clear selection after export
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export images. Please try again.');
+    }
+  };
 
   const handleClearSelection = () => {
     setSelectedImages([]);
@@ -313,7 +348,6 @@ const handleRatingChange = async (imageId, rating) => {
           </Button>
         </div>
       </div>
-
 {/* Gallery Grid */}
 <GalleryGrid
         images={gallery.images || []}
