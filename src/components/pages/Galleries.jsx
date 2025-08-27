@@ -184,12 +184,12 @@ const getClientName = (clientId) => {
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredGalleries.map((gallery, index) => {
+{filteredGalleries.map((gallery, index) => {
             const stats = getGalleryStats(gallery);
             
             return (
 <motion.div
-                key={gallery.id}
+                key={gallery.Id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
