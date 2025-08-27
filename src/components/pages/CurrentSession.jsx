@@ -96,20 +96,25 @@ if (galleryData.client_id_c) {
     });
   };
 
-  const handleRatingChange = async (imageId, rating) => {
+const handleRatingChange = async (imageId, rating) => {
     try {
+      // Update the specific image record using imageService
+      const imageService = await import('@/services/api/imageService');
+      await imageService.default.updateRating(imageId, rating);
+      
+      // Update the local gallery state for immediate UI feedback
       const updatedGallery = { ...gallery };
-      const imageIndex = updatedGallery.images.findIndex(img => img.id === imageId);
+      const imageIndex = updatedGallery.images.findIndex(img => (img.Id || img.id) === imageId);
       
       if (imageIndex !== -1) {
         updatedGallery.images[imageIndex].rating = rating;
-        await galleryService.update(gallery.id, updatedGallery);
         setGallery(updatedGallery);
-        toast.success("Image rating updated");
       }
+      
+      toast.success("Image rating updated");
     } catch (err) {
       toast.error("Failed to update image rating");
-      console.error("Error updating rating:", err);
+      console.error("Error updating rating:", err?.response?.data?.message || err.message);
     }
   };
 

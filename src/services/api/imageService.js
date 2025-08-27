@@ -60,6 +60,38 @@ class ImageService {
     }
   }
 
+async update(imageId, data) {
+    try {
+      const params = {
+        records: [{
+          Id: parseInt(imageId),
+          ...data
+        }]
+      };
+
+      const response = await this.apperClient.updateRecord(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+
+      if (response.results) {
+        const failedRecords = response.results.filter(result => !result.success);
+        
+        if (failedRecords.length > 0) {
+          console.error(`Failed to update image ${failedRecords.length} records:${JSON.stringify(failedRecords)}`);
+          throw new Error(failedRecords[0].message || 'Failed to update image');
+        }
+
+        return response.results[0].data;
+      }
+    } catch (error) {
+      console.error("Error updating image:", error.message);
+      throw error;
+    }
+  }
+
   async updateRating(imageId, rating) {
     try {
       const params = {
@@ -91,7 +123,6 @@ class ImageService {
       throw error;
     }
   }
-
   async create(imageData) {
     try {
       const params = {

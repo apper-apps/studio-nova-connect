@@ -168,7 +168,7 @@ const handleRatingChange = async (imageId, rating) => {
       
       // Update the local gallery state for immediate UI feedback
       const updatedGallery = { ...gallery };
-      const imageIndex = updatedGallery.images.findIndex(img => img.Id === imageId || img.id === imageId);
+      const imageIndex = updatedGallery.images.findIndex(img => (img.Id || img.id) === imageId);
       
       if (imageIndex !== -1) {
         updatedGallery.images[imageIndex].rating = rating;
