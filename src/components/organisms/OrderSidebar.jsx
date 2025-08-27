@@ -2,15 +2,15 @@ import React, { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/atoms/Card";
 import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@/components/atoms/Modal";
-import orderService from "@/services/api/orderService";
-import orderLineItemService from "@/services/api/orderLineItemService";
-import { toast } from "@/utils/toast";
+import toast from "@/utils/toast";
 import { cn } from "@/utils/cn";
 import ApperIcon from "@/components/ApperIcon";
 import FormField from "@/components/molecules/FormField";
 import Label from "@/components/atoms/Label";
 import Button from "@/components/atoms/Button";
 import Input from "@/components/atoms/Input";
+import orderLineItemService from "@/services/api/orderLineItemService";
+import orderService from "@/services/api/orderService";
 
 const OrderSidebar = ({ 
   isOpen, 
@@ -390,9 +390,9 @@ const [selectedProduct, setSelectedProduct] = useState("");
                       </select>
                     </div>
                   )}
+)}
 
                   <div>
-<div>
                     <Label>Quantity</Label>
                     <Input
                       type="number"
@@ -433,8 +433,9 @@ const [selectedProduct, setSelectedProduct] = useState("");
                     <p className="text-gray-500 text-sm text-center py-4">
                       No items added yet
                     </p>
-                  ) : (
-{orderItems.map((item, index) => (
+) : (
+                    <div className="space-y-2">
+                      {orderItems.map((item, index) => (
                         <div key={index} className="p-3 bg-gray-50 rounded-lg border">
                           <div className="flex items-start gap-3">
                             {item.thumbnailUrl && (
@@ -482,7 +483,8 @@ const [selectedProduct, setSelectedProduct] = useState("");
                             </div>
                           </div>
                         </div>
-                      ))}
+))}
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -519,7 +521,6 @@ const [selectedProduct, setSelectedProduct] = useState("");
                       <span>${totals.total.toFixed(2)}</span>
                     </div>
                   </div>
-
 <div className="space-y-2">
                     <Button
                       variant="outline"
@@ -579,9 +580,8 @@ const [selectedProduct, setSelectedProduct] = useState("");
         <div
           className="fixed inset-0 bg-black/50 z-20 lg:hidden"
           onClick={onToggle}
-        />
-)}
-
+/>
+      )}
       {/* Order Adjustment Modal */}
       <Modal isOpen={showAdjustmentModal} onClose={() => setShowAdjustmentModal(false)}>
         <ModalHeader>
