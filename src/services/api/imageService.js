@@ -147,6 +147,47 @@ class ImageService {
       console.error("Error deleting image:", error.message);
       throw error;
     }
+}
+
+  async bulkUpdateRating(imageIds, rating) {
+    try {
+      const records = imageIds.map(id => ({
+        Id: parseInt(id),
+        rating_c: rating
+      }));
+
+      const params = {
+        records
+      };
+
+      const response = await this.apperClient.updateRecord(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+
+      if (response.results) {
+        const successfulUpdates = response.results.filter(result => result.success);
+        const failedUpdates = response.results.filter(result => !result.success);
+        
+        if (failedUpdates.length > 0) {
+          console.error(`Failed to bulk update image ratings ${failedUpdates.length} records:${JSON.stringify(failedUpdates)}`);
+          
+          // If some succeeded and some failed, throw error with details
+          if (successfulUpdates.length > 0) {
+            throw new Error(`Updated ${successfulUpdates.length} images, but ${failedUpdates.length} failed`);
+          } else {
+            throw new Error(failedUpdates[0].message || 'Failed to update image ratings');
+          }
+        }
+
+        return response.results.map(result => result.data);
+      }
+    } catch (error) {
+      console.error("Error bulk updating image ratings:", error.message);
+      throw error;
+    }
   }
 }
 

@@ -1,4 +1,5 @@
-import React from "react";
+import React from 'react'
+import BulkActionsToolbar from '@/components/molecules/BulkActionsToolbar'
 import { motion } from "framer-motion";
 import ImageThumbnail from "@/components/molecules/ImageThumbnail";
 import FilterTabs from "@/components/molecules/FilterTabs";
@@ -10,7 +11,7 @@ import { cn } from "@/utils/cn";
 
 const GalleryGrid = ({
   images,
-  selectedImages = [],
+selectedImages = [],
   blackWhiteImages = [],
   activeFilter = "all",
   loading = false,
@@ -19,6 +20,8 @@ const GalleryGrid = ({
   onFilterChange,
   onCompareImages,
   onPlaySlideshow,
+  onBulkRating,
+  onClearSelection,
   className
 }) => {
   const filteredImages = React.useMemo(() => {
@@ -60,7 +63,16 @@ const GalleryGrid = ({
   }
 
   return (
-    <div className={cn("space-y-6", className)}>
+<div className={cn("space-y-6", className)}>
+      {/* Bulk Actions Toolbar */}
+      {selectedImages.length > 0 && (
+        <BulkActionsToolbar
+          selectedCount={selectedImages.length}
+          onBulkRating={onBulkRating}
+          onClearSelection={onClearSelection}
+        />
+      )}
+
       {/* Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <FilterTabs

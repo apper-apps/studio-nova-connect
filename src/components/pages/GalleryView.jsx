@@ -13,7 +13,7 @@ import Loading from "@/components/ui/Loading";
 import { Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter } from "@/components/atoms/Modal";
 import clientService from "@/services/api/clientService";
 import galleryService from "@/services/api/galleryService";
-
+import imageService from "@/services/api/imageService";
 const GalleryView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -160,7 +160,7 @@ const loadGallery = async () => {
     });
   };
 
-  const handleRatingChange = async (imageId, rating) => {
+const handleRatingChange = async (imageId, rating) => {
     try {
       const updatedGallery = { ...gallery };
       const imageIndex = updatedGallery.images.findIndex(img => img.id === imageId);
@@ -175,6 +175,43 @@ const loadGallery = async () => {
       toast.error("Failed to update image rating");
       console.error("Error updating rating:", err);
     }
+  };
+
+  const handleBulkRating = async (rating) => {
+    if (selectedImages.length === 0) return;
+    
+    try {
+      setLoading(true);
+      
+      // Extract image IDs from selected images
+      const imageIds = selectedImages.map(img => img.id);
+      
+      // Use the imageService for bulk rating update
+      await imageService.bulkUpdateRating(imageIds, rating);
+      
+      // Update local gallery state
+      const updatedGallery = { ...gallery };
+      updatedGallery.images = updatedGallery.images.map(img => {
+        if (imageIds.includes(img.id)) {
+          return { ...img, rating };
+        }
+        return img;
+      });
+      
+      setGallery(updatedGallery);
+      setSelectedImages([]);
+      
+      toast.success(`Successfully rated ${selectedImages.length} image${selectedImages.length === 1 ? '' : 's'} as "${rating}"`);
+    } catch (err) {
+      toast.error("Failed to update bulk ratings");
+      console.error("Error updating bulk ratings:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedImages([]);
   };
 
   const handlePlaySlideshow = () => {
@@ -278,7 +315,7 @@ const loadGallery = async () => {
       </div>
 
 {/* Gallery Grid */}
-      <GalleryGrid
+<GalleryGrid
         images={gallery.images || []}
         selectedImages={selectedImages}
         blackWhiteImages={blackWhiteImages}
@@ -288,6 +325,8 @@ const loadGallery = async () => {
         onFilterChange={setActiveFilter}
         onCompareImages={handleCompareImages}
         onPlaySlideshow={handlePlaySlideshow}
+        onBulkRating={handleBulkRating}
+        onClearSelection={handleClearSelection}
       />
 
       {/* Slideshow Viewer */}
