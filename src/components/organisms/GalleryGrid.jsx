@@ -106,9 +106,9 @@ const GalleryGrid = ({
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
         >
-          {filteredImages.map((image, index) => (
+{filteredImages.map((image, index) => (
             <motion.div
-              key={image.id}
+              key={image.Id || `image-${index}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}

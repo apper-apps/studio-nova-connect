@@ -152,13 +152,13 @@ title="Welcome to ZenSales"
       {/* Recent Galleries */}
       <div>
         <h2 className="text-2xl font-bold text-primary mb-6">Recent Galleries</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {galleries.map((gallery, index) => {
             const stats = getGalleryStats(gallery);
             
             return (
               <motion.div
-                key={gallery.id}
+                key={gallery.Id || `gallery-${index}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
