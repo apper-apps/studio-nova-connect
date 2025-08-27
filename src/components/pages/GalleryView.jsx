@@ -163,16 +163,20 @@ const updatedGallery = await galleryService.update(gallery.Id, {
 
 const handleRatingChange = async (imageId, rating) => {
     try {
+      // Update the specific image record using imageService
+      await imageService.update(imageId, { rating_c: rating });
+      
+      // Update the local gallery state for immediate UI feedback
       const updatedGallery = { ...gallery };
-      const imageIndex = updatedGallery.images.findIndex(img => img.id === imageId);
+      const imageIndex = updatedGallery.images.findIndex(img => img.Id === imageId || img.id === imageId);
       
       if (imageIndex !== -1) {
         updatedGallery.images[imageIndex].rating = rating;
-        await galleryService.update(gallery.id, updatedGallery);
         setGallery(updatedGallery);
-        toast.success("Image rating updated");
       }
-} catch (err) {
+      
+      toast.success("Image rating updated");
+    } catch (err) {
       toast.error("Failed to update image rating");
       console.error("Error updating image rating:", err?.response?.data?.message || err.message);
     }
