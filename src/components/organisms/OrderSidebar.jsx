@@ -386,7 +386,6 @@ const [selectedProduct, setSelectedProduct] = useState("");
                           <option key={size.size} value={size.size}>
                             {size.size} - ${size.price.toFixed(2)}
                           </option>
-                        ))}
 ))}
                       </select>
                     </div>
@@ -585,156 +584,58 @@ const [selectedProduct, setSelectedProduct] = useState("");
       )}
 {/* Order Adjustment Modal */}
       <Modal isOpen={showAdjustmentModal} onClose={() => setShowAdjustmentModal(false)}>
-                    <div className="space-y-2">
-                      {orderItems.map((item, index) => (
-                        <div key={index} className="p-3 bg-gray-50 rounded-lg border">
-                          <div className="flex items-start gap-3">
-                            {item.thumbnailUrl && (
-                              <img
-                                src={item.thumbnailUrl}
-                                alt="Product thumbnail"
-                                className="w-12 h-12 rounded object-cover"
-                              />
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium text-primary truncate">
-                                  {item.productName}
-                                  {item.lineItemType !== "Product" && (
-                                    <span className="ml-2 px-2 py-1 bg-accent/20 text-accent rounded-full text-xs">
-                                      {item.lineItemType}
-                                    </span>
-                                  )}
-                                </p>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => onRemoveItem(index)}
-                                  className="w-6 h-6 p-0 text-error hover:text-error ml-2"
-                                >
-                                  <ApperIcon name="X" size={14} />
-                                </Button>
-                              </div>
-                              <p className="text-xs text-gray-600">
-                                {item.size && `${item.size} × `}{item.quantity}
-                              </p>
-                              {item.specialRequests && (
-                                <p className="text-xs text-accent mt-1 font-medium">
-                                  Special: {item.specialRequests}
-                                </p>
-                              )}
-                              <div className="flex justify-between items-center mt-2">
-                                <span className="text-xs text-gray-500">
-                                  ${item.unitPrice.toFixed(2)} each
-                                </span>
-                                <span className="text-sm font-medium">
-                                  ${(item.unitPrice * item.quantity).toFixed(2)}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Totals */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Order Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <Label>Sales Tax (%)</Label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      max="20"
-                      value={salesTaxRate}
-                      onChange={(e) => onSalesTaxChange(parseFloat(e.target.value) || 0)}
-                    />
-                  </div>
-
-                  <div className="space-y-2 pt-2 border-t border-gray-200">
-                    <div className="flex justify-between text-sm">
-                      <span>Subtotal:</span>
-                      <span>${totals.subtotal.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Tax ({salesTaxRate}%):</span>
-                      <span>${totals.tax.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-lg font-bold border-t border-gray-200 pt-2">
-                      <span>Total:</span>
-                      <span>${totals.total.toFixed(2)}</span>
-                    </div>
-                  </div>
-<div className="space-y-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowAdjustmentModal(true)}
-                      className="w-full"
-                    >
-                      <ApperIcon name="Plus" size={14} className="mr-1" />
-                      Add Fee/Discount
-                    </Button>
-                    
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowPaymentModal(true)}
-                      disabled={orderItems.length === 0}
-                      className="w-full"
-                    >
-                      <ApperIcon name="CreditCard" size={14} className="mr-1" />
-                      Record Payment
-                    </Button>
-
-                    <Button
-                      onClick={() => setShowInvoiceModal(true)}
-                      disabled={orderItems.length === 0}
-                      className="w-full"
-                    >
-                      <ApperIcon name="FileText" size={14} className="mr-1" />
-                      Generate Invoice
-                    </Button>
-
-                    <Button 
-                      onClick={handleCompleteOrder}
-                      disabled={orderItems.length === 0 || processing}
-                      className="w-full bg-success hover:bg-success/90"
-                    >
-                      {processing ? (
-                        <>
-                          <ApperIcon name="Loader" size={14} className="mr-1 animate-spin" />
-                          Processing...
-                        </>
-                      ) : (
-                        <>
-                          <ApperIcon name="Check" size={14} className="mr-1" />
-                          Complete Order
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        <ModalHeader>
+          <ModalTitle>Add Order Adjustment</ModalTitle>
+        </ModalHeader>
+        <ModalContent className="space-y-4">
+          <div>
+            <Label>Adjustment Type</Label>
+            <select
+              value={adjustmentType}
+              onChange={(e) => setAdjustmentType(e.target.value)}
+              className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:border-accent focus:ring-2 focus:ring-accent/20"
+            >
+              <option value="Sitting Fee">Sitting Fee</option>
+              <option value="Discount">Discount</option>
+            </select>
+          </div>
+          
+          <FormField
+            label="Amount"
+            type="number"
+            step="0.01"
+            min="0"
+            value={adjustmentAmount}
+            onChange={(e) => setAdjustmentAmount(e.target.value)}
+            placeholder="0.00"
+            required
+          />
+          
+          <FormField
+            label="Description"
+            value={adjustmentDescription}
+            onChange={(e) => setAdjustmentDescription(e.target.value)}
+            placeholder="e.g., Session fee, Holiday discount"
+            required
+          />
+        </ModalContent>
+        <ModalFooter>
+          <Button variant="outline" onClick={() => setShowAdjustmentModal(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleAddAdjustment}>
+            Add {adjustmentType}
+          </Button>
+        </ModalFooter>
+      </Modal>
 
       {/* Mobile Backdrop */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-20 lg:hidden"
           onClick={onToggle}
-/>
+        />
       )}
-      {/* Order Adjustment Modal */}
-      <Modal isOpen={showAdjustmentModal} onClose={() => setShowAdjustmentModal(false)}>
         <ModalHeader>
           <ModalTitle>Add Order Adjustment</ModalTitle>
         </ModalHeader>
