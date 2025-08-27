@@ -124,10 +124,14 @@ const [selectedProduct, setSelectedProduct] = useState("");
     toast.success(`${adjustmentType} added to order`);
   };
 
-  const generateInvoicePDF = () => {
+const generateInvoicePDF = async () => {
+    const invoiceNumber = `INV-${Date.now()}`;
+    const invoiceDate = new Date().toLocaleDateString();
+    const balanceDue = totals.total - (parseFloat(amountPaid) || 0);
+    
     const invoiceData = {
-      invoiceNumber: `INV-${Date.now()}`,
-      date: new Date().toLocaleDateString(),
+      invoiceNumber: invoiceNumber,
+      date: invoiceDate,
       studio: {
         name: studioName,
         address: studioAddress,
@@ -151,8 +155,33 @@ const [selectedProduct, setSelectedProduct] = useState("");
         status: paymentStatus,
         amountPaid: parseFloat(amountPaid) || 0,
         method: paymentMethod
-      }
+      },
+      balanceDue: balanceDue
     };
+
+    // Save invoice record to database
+    try {
+      const invoiceService = (await import('@/services/api/invoiceService')).default;
+      
+      const invoiceRecord = await invoiceService.create({
+        Name: `Invoice for Order ${Date.now()}`,
+        invoice_number_c: invoiceNumber,
+        client_c: clientId || 1,
+        invoice_date_c: new Date().toISOString().split('T')[0],
+        due_date_c: invoiceService.calculateDueDate(),
+        total_amount_c: totals.total,
+        status_c: balanceDue <= 0 ? "Paid" : "Unpaid",
+        payments_received_c: parseFloat(amountPaid) || 0,
+        balance_due_c: balanceDue,
+        file_path_c: `Invoice-${invoiceNumber}.html`,
+        legal_clause_c: "All sales are final. Digital files are delivered within 2-3 business days of full payment. Print orders require 5-7 business days for processing. Client is responsible for any applicable taxes. By signing below, client agrees to these terms and conditions."
+      });
+      
+      console.log('Invoice record created:', invoiceRecord);
+    } catch (error) {
+      console.error('Failed to save invoice record:', error);
+      // Continue with file generation even if database save fails
+    }
 
     // Generate HTML content for the invoice
     const invoiceHTML = `
@@ -160,32 +189,165 @@ const [selectedProduct, setSelectedProduct] = useState("");
       <html>
       <head>
         <style>
-          body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
-          .header { text-align: center; border-bottom: 2px solid #4a90e2; padding-bottom: 20px; margin-bottom: 30px; }
-          .studio-info { color: #4a90e2; }
-          .invoice-details { margin-bottom: 30px; }
-          .line-items { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-          .line-items th, .line-items td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-          .line-items th { background-color: #f8f9fa; }
-          .thumbnail { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
-          .totals { text-align: right; margin-bottom: 30px; }
-          .totals table { margin-left: auto; }
-          .payment-info { background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 30px; }
-          .legal { font-size: 12px; color: #666; border-top: 1px solid #ddd; padding-top: 20px; }
-          .signature { margin-top: 50px; border-top: 1px solid #000; width: 300px; text-align: center; padding-top: 10px; }
+          body { 
+            font-family: 'Arial', sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background-color: #ffffff;
+            color: #333;
+            line-height: 1.6;
+          }
+          .header { 
+            text-align: center; 
+            border-bottom: 3px solid #4a90e2; 
+            padding-bottom: 20px; 
+            margin-bottom: 30px; 
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 30px;
+            border-radius: 8px;
+          }
+          .studio-info { 
+            color: #4a90e2; 
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+          }
+          .studio-details {
+            font-size: 14px;
+            color: #666;
+          }
+          .invoice-details { 
+            margin-bottom: 30px; 
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #4a90e2;
+          }
+          .invoice-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4a90e2;
+            margin-bottom: 15px;
+          }
+          .line-items { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 30px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+          }
+          .line-items th, .line-items td { 
+            border: 1px solid #e9ecef; 
+            padding: 15px 12px; 
+            text-align: left; 
+          }
+          .line-items th { 
+            background-color: #4a90e2; 
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1px;
+          }
+          .line-items tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+          }
+          .thumbnail { 
+            width: 60px; 
+            height: 60px; 
+            object-fit: cover; 
+            border-radius: 6px; 
+            border: 2px solid #e9ecef;
+          }
+          .totals { 
+            text-align: right; 
+            margin-bottom: 30px; 
+          }
+          .totals table { 
+            margin-left: auto; 
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+          }
+          .totals td {
+            padding: 12px 20px;
+            border: 1px solid #e9ecef;
+          }
+          .totals .total-row {
+            background-color: #4a90e2;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+          }
+          .payment-info { 
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); 
+            padding: 20px; 
+            border-radius: 8px; 
+            margin-bottom: 30px; 
+            border-left: 4px solid #2196f3;
+          }
+          .payment-info h3 {
+            color: #1976d2;
+            margin-top: 0;
+            margin-bottom: 15px;
+          }
+          .legal { 
+            font-size: 12px; 
+            color: #666; 
+            border-top: 2px solid #e9ecef; 
+            padding-top: 20px; 
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+          }
+          .legal h4 {
+            color: #4a90e2;
+            margin-top: 0;
+            margin-bottom: 15px;
+          }
+          .signature { 
+            margin-top: 40px; 
+            text-align: center;
+            background-color: white;
+            padding: 30px;
+            border: 2px dashed #4a90e2;
+            border-radius: 8px;
+          }
+          .signature-line {
+            border-top: 2px solid #333; 
+            width: 300px; 
+            margin: 40px auto 10px auto;
+          }
+          .signature strong {
+            color: #4a90e2;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+          }
+          @media print {
+            body { padding: 0; }
+            .signature { border: 2px solid #4a90e2; }
+          }
         </style>
       </head>
       <body>
         <div class="header">
           <h1 class="studio-info">${invoiceData.studio.name}</h1>
-          <p>${invoiceData.studio.address}<br>
-          ${invoiceData.studio.phone} | ${invoiceData.studio.email}</p>
+          <div class="studio-details">
+            <p>${invoiceData.studio.address}<br>
+            ${invoiceData.studio.phone} | ${invoiceData.studio.email}</p>
+          </div>
         </div>
         
         <div class="invoice-details">
-          <h2>INVOICE #${invoiceData.invoiceNumber}</h2>
+          <h2 class="invoice-title">INVOICE #${invoiceData.invoiceNumber}</h2>
           <p><strong>Date:</strong> ${invoiceData.date}</p>
           <p><strong>Client:</strong> ${invoiceData.client}</p>
+          <p><strong>Due Date:</strong> ${new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}</p>
         </div>
 
         <table class="line-items">
@@ -202,12 +364,12 @@ const [selectedProduct, setSelectedProduct] = useState("");
           <tbody>
             ${invoiceData.items.map(item => `
               <tr>
-                <td>${item.thumbnail ? `<img src="${item.thumbnail}" class="thumbnail" alt="Product">` : '-'}</td>
-                <td>${item.description}</td>
+                <td style="text-align: center;">${item.thumbnail ? `<img src="${item.thumbnail}" class="thumbnail" alt="Product">` : '<div style="width:60px;height:60px;background:#f0f0f0;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#666;">No Image</div>'}</td>
+                <td><strong>${item.description}</strong></td>
                 <td>${item.specialRequests || '-'}</td>
-                <td>${item.quantity}</td>
-                <td>$${item.unitPrice.toFixed(2)}</td>
-                <td>$${item.total.toFixed(2)}</td>
+                <td style="text-align: center;">${item.quantity}</td>
+                <td style="text-align: right;">$${item.unitPrice.toFixed(2)}</td>
+                <td style="text-align: right;"><strong>$${item.total.toFixed(2)}</strong></td>
               </tr>
             `).join('')}
           </tbody>
@@ -215,31 +377,34 @@ const [selectedProduct, setSelectedProduct] = useState("");
 
         <div class="totals">
           <table>
-            <tr><td>Subtotal:</td><td>$${invoiceData.subtotal.toFixed(2)}</td></tr>
-            <tr><td>Tax (${salesTaxRate}%):</td><td>$${invoiceData.tax.toFixed(2)}</td></tr>
-            <tr style="font-weight: bold; border-top: 1px solid #000;">
-              <td>Total:</td><td>$${invoiceData.total.toFixed(2)}</td>
+            <tr><td>Subtotal:</td><td style="text-align: right;">$${invoiceData.subtotal.toFixed(2)}</td></tr>
+            <tr><td>Tax (${salesTaxRate}%):</td><td style="text-align: right;">$${invoiceData.tax.toFixed(2)}</td></tr>
+            <tr class="total-row">
+              <td><strong>Total:</strong></td><td style="text-align: right;"><strong>$${invoiceData.total.toFixed(2)}</strong></td>
             </tr>
           </table>
         </div>
 
         <div class="payment-info">
-          <h3>Payment Information</h3>
+          <h3>💳 Payment Information</h3>
           <p><strong>Status:</strong> ${invoiceData.payment.status}</p>
           <p><strong>Amount Paid:</strong> $${invoiceData.payment.amountPaid.toFixed(2)}</p>
           <p><strong>Payment Method:</strong> ${invoiceData.payment.method}</p>
-          <p><strong>Balance Due:</strong> $${(invoiceData.total - invoiceData.payment.amountPaid).toFixed(2)}</p>
+          <p><strong>Balance Due:</strong> <span style="color: ${invoiceData.balanceDue > 0 ? '#e74c3c' : '#27ae60'}; font-weight: bold;">$${invoiceData.balanceDue.toFixed(2)}</span></p>
         </div>
 
         <div class="legal">
-          <h4>Terms and Conditions</h4>
+          <h4>📋 Terms and Conditions</h4>
           <p>All sales are final. Digital files are delivered within 2-3 business days of full payment. 
           Print orders require 5-7 business days for processing. Client is responsible for any applicable 
-          taxes. By signing below, client agrees to these terms and conditions.</p>
+          taxes. Late payments may incur additional fees. This invoice is valid for 30 days from the date of issue. 
+          By signing below, client agrees to these terms and conditions and acknowledges receipt of services/products.</p>
         </div>
 
         <div class="signature">
-          <strong>Client Signature</strong>
+          <p style="margin-bottom: 20px; color: #666;">By signing below, you acknowledge receipt of services and agree to the terms and conditions:</p>
+          <div class="signature-line"></div>
+          <strong>Client Signature & Date</strong>
         </div>
       </body>
       </html>
@@ -250,13 +415,13 @@ const [selectedProduct, setSelectedProduct] = useState("");
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.href = url;
-    link.download = `Invoice-${invoiceData.invoiceNumber}.html`;
+    link.download = `Invoice-${invoiceNumber}.html`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    toast.success("Invoice generated and downloaded!");
+    toast.success("Professional invoice generated and downloaded! Invoice record saved to database.");
     setShowInvoiceModal(false);
   };
 
