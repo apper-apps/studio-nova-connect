@@ -134,18 +134,37 @@ const handleRatingChange = async (imageId, rating) => {
     }
   };
 
-  const handleAddOrderItem = (item) => {
-    setOrderItems(prev => [...prev, item]);
-    toast.success("Item added to order");
+const handleAddOrderItem = (item) => {
+    setOrderItems(prev => {
+      // Check if the same product/size combo already exists
+      const existingIndex = prev.findIndex(existing => 
+        existing.productId === item.productId && 
+        existing.size === item.size &&
+        existing.lineItemType === item.lineItemType
+      );
+
+      if (existingIndex >= 0 && item.lineItemType === "Product") {
+        // Update existing item quantity
+        const updated = [...prev];
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          quantity: updated[existingIndex].quantity + item.quantity,
+          specialRequests: item.specialRequests || updated[existingIndex].specialRequests
+        };
+        return updated;
+      } else {
+        // Add new item
+        return [...prev, { ...item, id: Date.now() }];
+      }
+    });
   };
 
   const handleUpdateOrderItem = (index, updatedItem) => {
-    setOrderItems(prev => prev.map((item, i) => i === index ? updatedItem : item));
+    setOrderItems(prev => prev.map((item, i) => i === index ? { ...item, ...updatedItem } : item));
   };
 
   const handleRemoveOrderItem = (index) => {
     setOrderItems(prev => prev.filter((_, i) => i !== index));
-    toast.success("Item removed from order");
   };
 
   if (loading) {
