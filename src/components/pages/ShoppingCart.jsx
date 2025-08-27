@@ -1,13 +1,35 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import Button from "@/components/atoms/Button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/atoms/Card";
-import FormField from "@/components/molecules/FormField";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/atoms/Card";
+import { loadStripe } from "@stripe/stripe-js";
+import { CardElement, Elements, useElements, useStripe } from "@stripe/react-stripe-js";
+import paymentService from "@/services/api/paymentService";
 import ApperIcon from "@/components/ApperIcon";
-import Loading from "@/components/ui/Loading";
+import FormField from "@/components/molecules/FormField";
+import Button from "@/components/atoms/Button";
 import Empty from "@/components/ui/Empty";
+import Loading from "@/components/ui/Loading";
+
+// Initialize Stripe (in production, use your publishable key)
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder');
+
+// Card element options
+const cardElementOptions = {
+  style: {
+    base: {
+      fontSize: '16px',
+      color: '#424770',
+      '::placeholder': {
+        color: '#aab7c4',
+      },
+    },
+    invalid: {
+      color: '#9e2146',
+    },
+  },
+};
 
 const ShoppingCart = () => {
   const navigate = useNavigate();
@@ -15,8 +37,11 @@ const ShoppingCart = () => {
   
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [processing, setProcessing] = useState(false);
-  const [customerInfo, setCustomerInfo] = useState({
+const [processing, setProcessing] = useState(false);
+  const [stripeLoaded, setStripeLoaded] = useState(false);
+  const [paymentError, setPaymentError] = useState(null);
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
+const [customerInfo, setCustomerInfo] = useState({
     email: "",
     firstName: "",
     lastName: "",
@@ -31,7 +56,7 @@ const ShoppingCart = () => {
     }
   });
 
-  useEffect(() => {
+useEffect(() => {
     // Load cart items from localStorage or session
     const savedCart = JSON.parse(localStorage.getItem('photographyCart') || '[]');
     setCartItems(savedCart);
@@ -41,6 +66,9 @@ const ShoppingCart = () => {
       setCartItems(location.state.cartItems);
       localStorage.setItem('photographyCart', JSON.stringify(location.state.cartItems));
     }
+
+    // Check if Stripe is available
+    setStripeLoaded(!!window.Stripe);
   }, [location.state]);
 
   const updateQuantity = (itemId, newQuantity) => {
@@ -64,7 +92,7 @@ const ShoppingCart = () => {
     toast.success("Item removed from cart");
   };
 
-  const calculateTotals = () => {
+const calculateTotals = () => {
     const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const tax = subtotal * 0.08; // 8% tax rate
     const total = subtotal + tax;
@@ -72,166 +100,241 @@ const ShoppingCart = () => {
     return { subtotal, tax, total };
   };
 
-  const handleCheckout = async (e) => {
-    e.preventDefault();
-    
-    if (cartItems.length === 0) {
-      toast.error("Your cart is empty");
-      return;
-    }
+// Stripe payment form component
+  const PaymentForm = () => {
+    const stripe = useStripe();
+    const elements = useElements();
 
-    if (!customerInfo.email || !customerInfo.firstName || !customerInfo.lastName) {
-      toast.error("Please fill in all required customer information");
-      return;
-    }
+    const handleSubmit = async (event) => {
+      event.preventDefault();
+      
+      if (cartItems.length === 0) {
+        toast.error("Your cart is empty");
+        return;
+      }
 
-    try {
-      setProcessing(true);
-      
-      // In production, this would integrate with Stripe
-      // For demo purposes, we'll simulate the checkout process
-      
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Clear cart
-      setCartItems([]);
-      localStorage.removeItem('photographyCart');
-      
-      toast.success("Order placed successfully! You will receive a confirmation email.");
-      navigate('/order-confirmation', { 
-        state: { 
-          orderTotal: calculateTotals().total,
-          orderItems: cartItems 
+      if (!customerInfo.email || !customerInfo.firstName || !customerInfo.lastName) {
+        toast.error("Please fill in all required customer information");
+        return;
+      }
+
+      if (!stripe || !elements) {
+        toast.error("Payment system not ready. Please try again.");
+        return;
+      }
+
+      const card = elements.getElement(CardElement);
+      if (!card) {
+        toast.error("Payment card not found. Please refresh the page.");
+        return;
+      }
+
+      try {
+        setPaymentProcessing(true);
+        setPaymentError(null);
+
+        const { total } = calculateTotals();
+        
+        // Create payment intent
+        const paymentIntent = await paymentService.createPaymentIntent(
+          total,
+          'usd',
+          {
+            customer_email: customerInfo.email,
+            customer_name: `${customerInfo.firstName} ${customerInfo.lastName}`,
+            order_items: cartItems.length
+          }
+        );
+
+        // Confirm payment with Stripe
+        const { error, paymentIntent: confirmedPayment } = await stripe.confirmCardPayment(
+          paymentIntent.client_secret,
+          {
+            payment_method: {
+              card: card,
+              billing_details: {
+                name: `${customerInfo.firstName} ${customerInfo.lastName}`,
+                email: customerInfo.email,
+                phone: customerInfo.phone,
+                address: {
+                  line1: customerInfo.address.line1,
+                  line2: customerInfo.address.line2,
+                  city: customerInfo.address.city,
+                  state: customerInfo.address.state,
+                  postal_code: customerInfo.address.postal_code,
+                  country: customerInfo.address.country,
+                },
+              },
+            },
+          }
+        );
+
+        if (error) {
+          console.error('Payment failed:', error);
+          setPaymentError(error.message);
+          toast.error(`Payment failed: ${error.message}`);
+          return;
         }
-      });
-      
-    } catch (err) {
-      toast.error("Failed to process order. Please try again.");
-      console.error("Checkout error:", err);
-    } finally {
-      setProcessing(false);
-    }
+
+        if (confirmedPayment && confirmedPayment.status === 'succeeded') {
+          // Create payment record in database
+          try {
+            await paymentService.create({
+              name: `Payment for Order ${Date.now()}`,
+              payment_amount_c: total,
+              payment_date_c: new Date().toISOString(),
+              payment_status_c: 'Completed',
+              stripe_transaction_id_c: confirmedPayment.id
+            });
+          } catch (dbError) {
+            console.error('Failed to save payment record:', dbError);
+            // Don't fail the whole transaction for DB errors
+          }
+
+          // Clear cart and redirect
+          setCartItems([]);
+          localStorage.removeItem('photographyCart');
+          
+          toast.success("Payment successful! Your order has been placed.");
+          navigate('/order-confirmation', { 
+            state: { 
+              orderTotal: total,
+              orderItems: cartItems,
+              paymentId: confirmedPayment.id
+            }
+          });
+        }
+
+      } catch (err) {
+        console.error("Payment error:", err);
+        setPaymentError(err.message || "Payment processing failed");
+        toast.error("Payment failed. Please try again.");
+      } finally {
+        setPaymentProcessing(false);
+      }
+    };
+
+    return (
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Payment Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ApperIcon name="CreditCard" size={20} />
+              Payment Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="p-3 border rounded-lg">
+                <CardElement options={cardElementOptions} />
+              </div>
+              {paymentError && (
+                <div className="text-red-600 text-sm bg-red-50 p-2 rounded">
+                  {paymentError}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Submit Button */}
+        <Button
+          type="submit"
+          disabled={!stripe || paymentProcessing}
+          className="w-full"
+          size="lg"
+        >
+          {paymentProcessing ? (
+            <>
+              <ApperIcon name="Loader2" size={20} className="mr-2 animate-spin" />
+              Processing Payment...
+            </>
+          ) : (
+            <>
+              <ApperIcon name="Lock" size={20} className="mr-2" />
+              Pay ${calculateTotals().total.toFixed(2)}
+            </>
+          )}
+        </Button>
+      </form>
+    );
   };
 
   const totals = calculateTotals();
 
   if (loading) {
-    return <Loading />;
+return (
+      <div className="min-h-screen bg-surface-50 dark:bg-surface-900 flex items-center justify-center">
+        <Loading />
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate(-1)}>
-              <ApperIcon name="ArrowLeft" size={16} className="mr-2" />
-              Back to Gallery
-            </Button>
-            <h1 className="text-3xl font-bold text-primary">Shopping Cart</h1>
-          </div>
+    <div className="min-h-screen bg-surface-50 dark:bg-surface-900 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-primary dark:text-primary-dark">Shopping Cart</h1>
+          <p className="text-surface-600 dark:text-surface-400 mt-1">Review your items and complete your purchase</p>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
         {cartItems.length === 0 ? (
-          <div className="text-center">
-            <Empty
-              icon="ShoppingCart"
-              title="Your cart is empty"
-              description="Add some products from the gallery to get started."
-              actionLabel="Return to Gallery"
-              onAction={() => navigate(-1)}
-            />
-          </div>
+          <Empty
+            title="Your cart is empty"
+            description="Add some photos to your cart to get started"
+            actionText="Browse Gallery"
+            actionHref="/gallery"
+          />
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Cart Items */}
-            <div className="lg:col-span-2 space-y-4">
-              <h2 className="text-xl font-bold text-primary mb-4">Order Items</h2>
-              {cartItems.map((item, index) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
-                >
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <h3 className="font-medium text-primary">{item.productName}</h3>
-                          <p className="text-sm text-gray-600">{item.size}</p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {item.selectedImages?.length || 0} selected images
-                          </p>
-                        </div>
-                        
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                              disabled={item.quantity <= 1}
-                              className="w-8 h-8 p-0"
-                            >
-                              -
-                            </Button>
-                            <span className="w-8 text-center">{item.quantity}</span>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                              className="w-8 h-8 p-0"
-                            >
-                              +
-                            </Button>
-                          </div>
-                          
-                          <div className="text-right">
-                            <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
-                            <p className="text-xs text-gray-500">${item.price.toFixed(2)} each</p>
-                          </div>
-                          
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => removeItem(item.id)}
-                            className="w-8 h-8 p-0 text-error hover:text-error"
-                          >
-                            <ApperIcon name="Trash" size={14} />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Checkout Form */}
             <div className="space-y-6">
-              {/* Order Summary */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Order Summary</CardTitle>
+                  <CardTitle>Cart Items ({cartItems.length})</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between">
-                    <span>Subtotal:</span>
-                    <span>${totals.subtotal.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Tax:</span>
-                    <span>${totals.tax.toFixed(2)}</span>
-                  </div>
-                  <div className="border-t pt-3">
-                    <div className="flex justify-between font-bold text-lg">
-                      <span>Total:</span>
-                      <span>${totals.total.toFixed(2)}</span>
-                    </div>
+                <CardContent>
+                  <div className="space-y-4">
+                    {cartItems.map((item) => (
+                      <div key={item.id} className="flex items-center gap-4 p-4 border rounded-lg">
+                        <img
+                          src={item.thumbnail}
+                          alt={item.title}
+                          className="w-16 h-16 object-cover rounded"
+                        />
+                        <div className="flex-1">
+                          <h3 className="font-medium">{item.title}</h3>
+                          <p className="text-sm text-surface-600 dark:text-surface-400">
+                            {item.size} - ${item.price.toFixed(2)}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          >
+                            -
+                          </Button>
+                          <span className="w-8 text-center">{item.quantity}</span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          >
+                            +
+                          </Button>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => removeItem(item.id)}
+                        >
+                          <ApperIcon name="X" size={16} />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
@@ -242,63 +345,73 @@ const ShoppingCart = () => {
                   <CardTitle>Customer Information</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handleCheckout} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      label="First Name"
+                      required
+                      value={customerInfo.firstName}
+                      onChange={(value) => setCustomerInfo(prev => ({ ...prev, firstName: value }))}
+                    />
+                    <FormField
+                      label="Last Name"
+                      required
+                      value={customerInfo.lastName}
+                      onChange={(value) => setCustomerInfo(prev => ({ ...prev, lastName: value }))}
+                    />
                     <FormField
                       label="Email"
                       type="email"
                       required
                       value={customerInfo.email}
-                      onChange={(e) => setCustomerInfo(prev => ({ ...prev, email: e.target.value }))}
+                      onChange={(value) => setCustomerInfo(prev => ({ ...prev, email: value }))}
+                      className="md:col-span-2"
                     />
-                    
-                    <div className="grid grid-cols-2 gap-3">
-                      <FormField
-                        label="First Name"
-                        required
-                        value={customerInfo.firstName}
-                        onChange={(e) => setCustomerInfo(prev => ({ ...prev, firstName: e.target.value }))}
-                      />
-                      
-                      <FormField
-                        label="Last Name"
-                        required
-                        value={customerInfo.lastName}
-                        onChange={(e) => setCustomerInfo(prev => ({ ...prev, lastName: e.target.value }))}
-                      />
-                    </div>
-                    
                     <FormField
-                      label="Phone Number"
-                      type="tel"
+                      label="Phone"
                       value={customerInfo.phone}
-                      onChange={(e) => setCustomerInfo(prev => ({ ...prev, phone: e.target.value }))}
+                      onChange={(value) => setCustomerInfo(prev => ({ ...prev, phone: value }))}
+                      className="md:col-span-2"
                     />
-
-                    <Button
-                      type="submit"
-                      disabled={processing}
-                      className="w-full"
-                      size="lg"
-                    >
-                      {processing ? (
-                        <>
-                          <ApperIcon name="Loader" size={16} className="mr-2 animate-spin" />
-                          Processing Order...
-                        </>
-                      ) : (
-                        <>
-                          <ApperIcon name="CreditCard" size={16} className="mr-2" />
-                          Complete Order
-                        </>
-                      )}
-                    </Button>
-                  </form>
+                  </div>
                 </CardContent>
               </Card>
             </div>
+
+            {/* Payment Section */}
+            <div className="space-y-6">
+              {/* Order Summary */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Order Summary</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span>Subtotal</span>
+                      <span>${calculateTotals().subtotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Tax</span>
+                      <span>${calculateTotals().tax.toFixed(2)}</span>
+                    </div>
+                    <div className="border-t pt-2">
+                      <div className="flex justify-between font-bold">
+                        <span>Total</span>
+                        <span>${calculateTotals().total.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Stripe Payment Form */}
+              <Elements stripe={stripePromise}>
+                <PaymentForm />
+              </Elements>
+            </div>
           </div>
         )}
-      </div>
+</div>
     </div>
   );
 };
