@@ -46,7 +46,7 @@ class ProductTemplateService {
     }
   }
 
-  async getById(id) {
+async getById(id) {
     try {
       const params = {
         fields: [
@@ -59,7 +59,6 @@ class ProductTemplateService {
       };
 
       const response = await this.apperClient.getRecordById(this.tableName, parseInt(id), params);
-      
       if (!response.success) {
         console.error(response.message);
         throw new Error(response.message);
@@ -81,7 +80,7 @@ class ProductTemplateService {
   }
 
   async create(templateData) {
-    try {
+try {
       const params = {
         records: [{
           // Only include updateable fields
@@ -123,7 +122,7 @@ class ProductTemplateService {
     }
   }
 
-  async update(id, templateData) {
+async update(id, templateData) {
     try {
       const params = {
         records: [{
@@ -169,7 +168,7 @@ class ProductTemplateService {
 
   async delete(id) {
     try {
-      const params = {
+const params = {
         RecordIds: [parseInt(id)]
       };
 

@@ -47,7 +47,7 @@ class DownloadService {
     }
   }
 
-  async getByClientId(clientId) {
+async getByClientId(clientId) {
     try {
       const params = {
         fields: [
@@ -92,7 +92,7 @@ class DownloadService {
     }
   }
 
-  async recordDownload(clientId, imageId, resolutionOption = "high") {
+async recordDownload(clientId, imageId, resolutionOption = "high") {
     try {
       const params = {
         records: [{
@@ -137,7 +137,7 @@ class DownloadService {
     }
   }
 
-  async getDownloadsByImage(imageId) {
+async getDownloadsByImage(imageId) {
     try {
       const params = {
         fields: [

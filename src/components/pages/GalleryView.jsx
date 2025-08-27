@@ -91,9 +91,9 @@ const loadGallery = async () => {
       const shareableUrl = `gallery-${gallery.Id}-${Date.now().toString(36)}`;
       
       // Update gallery with shareable URL
-      const updatedGallery = await galleryService.update(gallery.Id, {
+const updatedGallery = await galleryService.update(gallery.Id, {
         ...gallery,
-        shareableUrl
+        shareable_url_c: shareableUrl
       });
       
       setGallery(updatedGallery);
@@ -172,9 +172,9 @@ const handleRatingChange = async (imageId, rating) => {
         setGallery(updatedGallery);
         toast.success("Image rating updated");
       }
-    } catch (err) {
+} catch (err) {
       toast.error("Failed to update image rating");
-      console.error("Error updating rating:", err);
+      console.error("Error updating image rating:", err?.response?.data?.message || err.message);
     }
   };
 
@@ -204,8 +204,8 @@ const handleRatingChange = async (imageId, rating) => {
       
       toast.success(`Successfully rated ${selectedImages.length} image${selectedImages.length === 1 ? '' : 's'} as "${rating}"`);
     } catch (err) {
-      toast.error("Failed to update bulk ratings");
-      console.error("Error updating bulk ratings:", err);
+toast.error("Failed to update bulk ratings");
+      console.error("Error updating bulk ratings:", err?.response?.data?.message || err.message);
     } finally {
       setLoading(false);
     }

@@ -94,15 +94,15 @@ if (editingProduct && editingProduct.Id) {
     } catch (err) {
       toast.error(editingProduct ? "Failed to update product" : "Failed to create product");
       console.error("Error saving product:", err);
-    }
+}
   };
 
-  const handleEditProduct = (product) => {
+const handleEditProduct = (product) => {
     setEditingProduct(product);
     setProductForm({
-      name: product.name,
-      category: product.category,
-      sizes: [...product.sizes]
+      name: product.name || "",
+      category: product.category || "",
+      sizes: product.sizes ? [...product.sizes] : [{ size: "", price: 0 }]
     });
     setShowCreateModal(true);
   };

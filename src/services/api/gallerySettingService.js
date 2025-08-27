@@ -7,7 +7,7 @@ class GallerySettingService {
       apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
     });
     this.tableName = 'gallery_setting_c';
-  }
+}
 
   async getByGalleryId(galleryId) {
     try {
@@ -55,15 +55,15 @@ class GallerySettingService {
   }
 
   async create(settingData) {
-    try {
+try {
       const params = {
         records: [{
           // Only include updateable fields
           Name: settingData.name || `Gallery Settings - ${Date.now()}`,
-          gallery_id_c: parseInt(settingData.galleryId),
-          password_c: settingData.password || "",
-          expiry_date_c: settingData.expiryDate || null,
-          enable_downloads_c: settingData.enableDownloads || false
+          gallery_id_c: parseInt(settingData.galleryId || settingData.gallery_id_c),
+          password_c: settingData.password || settingData.password_c || "",
+          expiry_date_c: settingData.expiryDate || settingData.expiry_date_c || null,
+          enable_downloads_c: settingData.enableDownloads !== undefined ? settingData.enableDownloads : settingData.enable_downloads_c || false
         }]
       };
 
@@ -98,8 +98,7 @@ class GallerySettingService {
       throw error;
     }
   }
-
-  async update(id, settingData) {
+async update(id, settingData) {
     try {
       const params = {
         records: [{
@@ -109,7 +108,7 @@ class GallerySettingService {
           gallery_id_c: parseInt(settingData.galleryId || settingData.gallery_id_c),
           password_c: settingData.password || settingData.password_c || "",
           expiry_date_c: settingData.expiryDate || settingData.expiry_date_c || null,
-          enable_downloads_c: settingData.enableDownloads !== undefined ? settingData.enableDownloads : settingData.enable_downloads_c
+          enable_downloads_c: settingData.enableDownloads !== undefined ? settingData.enableDownloads : (settingData.enable_downloads_c !== undefined ? settingData.enable_downloads_c : false)
         }]
       };
 
@@ -146,11 +145,10 @@ class GallerySettingService {
   }
 
   async delete(id) {
-    try {
+try {
       const params = {
         RecordIds: [parseInt(id)]
       };
-
       const response = await this.apperClient.deleteRecord(this.tableName, params);
       
       if (!response.success) {

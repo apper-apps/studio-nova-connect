@@ -7,7 +7,7 @@ class FavoriteImageService {
       apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
     });
     this.tableName = 'favorite_image_c';
-  }
+}
 
   async getByGalleryId(galleryId) {
     try {
@@ -47,7 +47,7 @@ class FavoriteImageService {
       console.error(`Error fetching favorites for gallery ${galleryId}:`, error.message);
       throw error;
     }
-  }
+}
 
   async getByClientAndGallery(clientId, galleryId) {
     try {
@@ -71,9 +71,8 @@ class FavoriteImageService {
             Values: [parseInt(galleryId)]
           }
         ]
+]
       };
-
-      const response = await this.apperClient.fetchRecords(this.tableName, params);
       
       if (!response.success) {
         console.error(response.message);
@@ -94,7 +93,7 @@ class FavoriteImageService {
     }
   }
 
-  async addFavorite(clientId, imageId, galleryId) {
+async addFavorite(clientId, imageId, galleryId) {
     try {
       const params = {
         records: [{
@@ -137,11 +136,11 @@ class FavoriteImageService {
     }
   }
 
-  async removeFavorite(clientId, imageId, galleryId) {
+async removeFavorite(clientId, imageId, galleryId) {
     try {
       // First find the favorite record
       const favorites = await this.getByClientAndGallery(clientId, galleryId);
-      const favorite = favorites.find(fav => fav.imageId === parseInt(imageId));
+      const favorite = favorites.find(fav => (fav.image_id_c?.Id || fav.image_id_c) === parseInt(imageId));
 
       if (!favorite) {
         throw new Error('Favorite not found');
@@ -150,7 +149,6 @@ class FavoriteImageService {
       const params = {
         RecordIds: [parseInt(favorite.Id)]
       };
-
       const response = await this.apperClient.deleteRecord(this.tableName, params);
       
       if (!response.success) {

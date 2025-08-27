@@ -63,7 +63,7 @@ try {
     } catch (error) {
       console.error('Portal session error:', error);
       throw new Error('Failed to access billing portal. Please try again.');
-    }
+}
   }
 
   // Get subscription details
@@ -74,7 +74,7 @@ try {
     const subscription = JSON.parse(localStorage.getItem('zensales_subscriptions') || '{}')[userId];
     
     if (!subscription) {
-      throw new Error('No subscription found');
+      throw new Error('Subscription record does not exist');
     }
 
     return {

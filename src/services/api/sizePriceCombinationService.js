@@ -7,7 +7,7 @@ class SizePriceCombinationService {
       apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
     });
     this.tableName = 'sizePriceCombination_c';
-  }
+}
 
   async getByTemplateId(templateId) {
     try {
@@ -53,7 +53,7 @@ class SizePriceCombinationService {
     }
   }
 
-  async createForTemplate(templateId, sizePriceData) {
+async createForTemplate(templateId, sizePriceData) {
     try {
       const records = sizePriceData.map((item, index) => ({
         Name: `${item.size} - $${item.price}`,
@@ -61,7 +61,6 @@ class SizePriceCombinationService {
         price_c: parseFloat(item.price) || 0,
         producttemplate_c: parseInt(templateId)
       }));
-
       const params = { records };
 
       const response = await this.apperClient.createRecord(this.tableName, params);
@@ -136,7 +135,7 @@ class SizePriceCombinationService {
     }
   }
 
-  async delete(id) {
+async delete(id) {
     try {
       const params = {
         RecordIds: [parseInt(id)]

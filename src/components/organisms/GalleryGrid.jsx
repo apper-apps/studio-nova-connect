@@ -120,15 +120,15 @@ selectedImages = [],
         >
 {filteredImages.map((image, index) => (
             <motion.div
-              key={image.Id || `image-${index}`}
+              key={image.Id || image.id || `image-${index}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
             >
               <ImageThumbnail
                 image={image}
-                isSelected={selectedImages.some(selected => selected.id === image.id)}
-                isBlackWhite={blackWhiteImages.includes(image.id)}
+                isSelected={selectedImages.some(selected => (selected.Id || selected.id) === (image.Id || image.id))}
+                isBlackWhite={blackWhiteImages.includes(image.Id || image.id)}
 onSelect={(img, isShiftClick) => handleImageSelect(img, isShiftClick)}
                 onToggleBlackWhite={() => onImageToggleBlackWhite(image.id)}
               />

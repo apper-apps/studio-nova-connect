@@ -9,7 +9,7 @@ class ImageExportService {
     this.tableName = 'image_export_selection_c';
   }
 
-  async createExportSelections(imageIds) {
+async createExportSelections(imageIds) {
     try {
       // Create records for tracking export selections
       const records = imageIds.map(imageId => ({
@@ -76,11 +76,10 @@ class ImageExportService {
   }
 
   async deleteExportSelection(selectionId) {
-    try {
+try {
       const params = {
         RecordIds: [parseInt(selectionId)]
       };
-
       const response = await this.apperClient.deleteRecord(this.tableName, params);
       
       if (!response.success) {
