@@ -50,7 +50,7 @@ function AppContent() {
   const dispatch = useDispatch();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 const [isInitialized, setIsInitialized] = useState(false);
-  const [ipsMode, setIpsMode] = useState('gallery');
+const [ipsMode, setIpsMode] = useState('gallery'); // 'gallery' or 'wall-designer'
   const [theme, setTheme] = useState(() => {
     const savedTheme = localStorage.getItem('theme');
     return savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');

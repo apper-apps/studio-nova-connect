@@ -6,11 +6,14 @@ import RightTools from './RightTools';
 import FooterBar from './FooterBar';
 import galleryService from '@/services/api/galleryService';
 import imageService from '@/services/api/imageService';
+import roomPhotoService from '@/services/api/roomPhotoService';
+import wallDesignService from '@/services/api/wallDesignService';
+import imagePlacementService from '@/services/api/imagePlacementService';
+import roomCalibrationService from '@/services/api/roomCalibrationService';
 import { toast } from 'react-toastify';
 import Loading from '@/components/ui/Loading';
-
 const IPSLayout = ({ mode = 'gallery' }) => {
-  const { id } = useParams();
+const { id } = useParams();
   const [gallery, setGallery] = useState(null);
   const [images, setImages] = useState([]);
   const [selectedImages, setSelectedImages] = useState([]);
@@ -19,11 +22,57 @@ const IPSLayout = ({ mode = 'gallery' }) => {
   const [leftTrayCollapsed, setLeftTrayCollapsed] = useState(false);
   const [rightToolsCollapsed, setRightToolsCollapsed] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all');
-
-  useEffect(() => {
+  
+  // Wall Designer state
+  const [roomPhotos, setRoomPhotos] = useState([]);
+  const [currentRoomPhoto, setCurrentRoomPhoto] = useState(null);
+  const [wallDesigns, setWallDesigns] = useState([]);
+  const [currentWallDesign, setCurrentWallDesign] = useState(null);
+  const [imagePlacements, setImagePlacements] = useState([]);
+  const [roomCalibration, setRoomCalibration] = useState(null);
+useEffect(() => {
     loadGalleryData();
-  }, [id]);
+    if (mode === 'wall-designer') {
+      loadRoomPhotos();
+      loadWallDesigns();
+    }
+  }, [id, mode]);
 
+  const loadRoomPhotos = async () => {
+    try {
+      const photos = await roomPhotoService.getByGalleryId(parseInt(id));
+      setRoomPhotos(photos);
+    } catch (error) {
+      console.error('Error loading room photos:', error);
+    }
+  };
+
+  const loadWallDesigns = async () => {
+    try {
+      const designs = await wallDesignService.getByGalleryId(parseInt(id));
+      setWallDesigns(designs);
+    } catch (error) {
+      console.error('Error loading wall designs:', error);
+    }
+  };
+
+  const loadImagePlacements = async (wallDesignId) => {
+    try {
+      const placements = await imagePlacementService.getByWallDesignId(wallDesignId);
+      setImagePlacements(placements);
+    } catch (error) {
+      console.error('Error loading image placements:', error);
+    }
+  };
+
+  const loadRoomCalibration = async (roomPhotoId) => {
+    try {
+      const calibration = await roomCalibrationService.getByRoomPhotoId(roomPhotoId);
+      setRoomCalibration(calibration);
+    } catch (error) {
+      console.error('Error loading room calibration:', error);
+    }
+  };
   const loadGalleryData = async () => {
     try {
       setLoading(true);
@@ -95,11 +144,13 @@ const IPSLayout = ({ mode = 'gallery' }) => {
   }
 
   return (
-    <div className="flex h-full bg-white">
+<div className="flex h-full bg-white">
       {/* Left Tray */}
       <LeftTray
+        mode={mode}
         gallery={gallery}
         images={filteredImages}
+        roomPhotos={roomPhotos}
         currentImageIndex={currentImageIndex}
         onImageSelect={setCurrentImageIndex}
         collapsed={leftTrayCollapsed}
@@ -117,6 +168,18 @@ const IPSLayout = ({ mode = 'gallery' }) => {
         currentImageIndex={currentImageIndex}
         onImageChange={setCurrentImageIndex}
         onImageSelect={handleImageSelect}
+        // Wall Designer props
+        currentRoomPhoto={currentRoomPhoto}
+        roomPhotos={roomPhotos}
+        wallDesigns={wallDesigns}
+        currentWallDesign={currentWallDesign}
+        imagePlacements={imagePlacements}
+        roomCalibration={roomCalibration}
+        onRoomPhotoSelect={setCurrentRoomPhoto}
+        onWallDesignSelect={setCurrentWallDesign}
+        onImagePlacementChange={setImagePlacements}
+        onLoadImagePlacements={loadImagePlacements}
+        onLoadRoomCalibration={loadRoomCalibration}
       />
 
       {/* Right Tools */}
@@ -128,6 +191,19 @@ const IPSLayout = ({ mode = 'gallery' }) => {
         onClearSelection={() => setSelectedImages([])}
         collapsed={rightToolsCollapsed}
         onToggleCollapse={() => setRightToolsCollapsed(!rightToolsCollapsed)}
+        // Wall Designer props
+        gallery={gallery}
+        roomPhotos={roomPhotos}
+        currentRoomPhoto={currentRoomPhoto}
+        wallDesigns={wallDesigns}
+        currentWallDesign={currentWallDesign}
+        imagePlacements={imagePlacements}
+        roomCalibration={roomCalibration}
+        onRoomPhotosChange={setRoomPhotos}
+        onWallDesignsChange={setWallDesigns}
+        onRoomCalibrationChange={setRoomCalibration}
+        onLoadRoomPhotos={loadRoomPhotos}
+        onLoadWallDesigns={loadWallDesigns}
       />
 
       {/* Footer Bar */}
@@ -137,6 +213,9 @@ const IPSLayout = ({ mode = 'gallery' }) => {
         selectedImages={selectedImages}
         totalImages={filteredImages.length}
         currentIndex={currentImageIndex}
+        // Wall Designer props
+        currentWallDesign={currentWallDesign}
+        imagePlacements={imagePlacements}
       />
     </div>
   );
