@@ -176,7 +176,7 @@ const handleAddOrderItem = (item) => {
         return [...prev, { ...item, id: Date.now() }];
       }
     });
-  };
+};
 
   const handleUpdateOrderItem = (index, updatedItem) => {
     setOrderItems(prev => prev.map((item, i) => i === index ? { ...item, ...updatedItem } : item));
@@ -186,6 +186,104 @@ const handleAddOrderItem = (item) => {
     setOrderItems(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handleSaveAsTemplate = async () => {
+    if (!gallery || !gallery.images || gallery.images.length === 0) {
+      toast.error("No images available to save as template");
+      return;
+    }
+
+    const templateName = prompt("Enter template name:", `${gallery.Name} Template`);
+    if (!templateName) return;
+
+    try {
+      const { default: wallDesignService } = await import('@/services/api/wallDesignService');
+      const { default: wallDesignTemplateService } = await import('@/services/api/wallDesignTemplateService');
+      
+      // Create a wall design configuration from current gallery arrangement
+      const designConfiguration = {
+        galleryId: gallery.Id,
+        totalImages: gallery.images.length,
+        selectedImages: selectedImages,
+        blackWhiteImages: blackWhiteImages,
+        arrangementData: {
+          layout: "gallery-grid", // Default layout type
+          imageCount: gallery.images.length,
+          selectedCount: selectedImages.length,
+          processingOptions: {
+            blackAndWhite: blackWhiteImages,
+            ratings: gallery.images.reduce((acc, img) => {
+              if (img.rating) acc[img.Id] = img.rating;
+              return acc;
+            }, {})
+          }
+        },
+        createdDate: new Date().toISOString(),
+        metadata: {
+          sessionDate: gallery.session_date_c,
+          clientId: gallery.client_id_c,
+          originalGalleryName: gallery.Name
+        }
+      };
+
+      // Create wall design record first
+      const wallDesign = await wallDesignService.create({
+        Name: `Design for ${templateName}`,
+        design_configuration_c: JSON.stringify(designConfiguration)
+      });
+
+      if (wallDesign) {
+        // Create wall design template record
+        await wallDesignTemplateService.create({
+          Name: templateName,
+          walldesign_c: wallDesign.Id
+        });
+
+        toast.success(`Template "${templateName}" saved successfully!`);
+      }
+    } catch (error) {
+      console.error("Error saving template:", error);
+      toast.error("Failed to save template. Please try again.");
+    }
+  };
+
+  const handleAddToOrder = async () => {
+    if (!gallery || !gallery.images || gallery.images.length === 0) {
+      toast.error("No images available to add to order");
+      return;
+    }
+
+    if (selectedImages.length === 0) {
+      toast.error("Please select images to add to order");
+      return;
+    }
+
+    try {
+      // Add each selected image as an order item
+      for (const imageId of selectedImages) {
+        const image = gallery.images.find(img => img.Id === imageId);
+        if (image) {
+          // Create a digital download item for each selected image
+          handleAddOrderItem({
+            productId: null, // No specific product
+            productName: "Digital Download",
+            size: "High Resolution",
+            quantity: 1,
+            unitPrice: 25.00, // Default price for digital downloads
+            thumbnailUrl: image.thumbnail_url_c || image.proofing_url_c || "",
+            specialRequests: blackWhiteImages.includes(imageId) ? "Black & White Processing" : "",
+            lineItemType: "Product",
+            description: `Digital Download - ${image.Name || `Image ${imageId}`}`,
+            imageId: imageId
+          });
+        }
+      }
+
+      toast.success(`Added ${selectedImages.length} images to order`);
+    } catch (error) {
+      console.error("Error adding to order:", error);
+      toast.error("Failed to add images to order. Please try again.");
+    }
+  };
   if (loading) {
     return <Loading />;
   }
@@ -234,9 +332,17 @@ const handleAddOrderItem = (item) => {
               <ApperIcon name="ShoppingCart" size={16} className="mr-2" />
               Order ({orderItems.length})
             </Button>
-            <Button onClick={handlePlaySlideshow}>
+<Button onClick={handlePlaySlideshow}>
               <ApperIcon name="Play" size={16} className="mr-2" />
               Start Presentation
+            </Button>
+            <Button onClick={handleSaveAsTemplate} variant="outline">
+              <ApperIcon name="Save" size={16} className="mr-2" />
+              Save as Template
+            </Button>
+            <Button onClick={handleAddToOrder} disabled={selectedImages.length === 0}>
+              <ApperIcon name="ShoppingCart" size={16} className="mr-2" />
+              Add to Order ({selectedImages.length})
             </Button>
           </div>
         </div>
