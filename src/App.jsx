@@ -212,9 +212,10 @@ if (!isAuthenticated) {
           />
 <main className="flex-1 overflow-hidden bg-surface-50 dark:bg-slate-900 transition-colors duration-300">
             <Routes>
-              <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+<Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/galleries" element={<ProtectedRoute><Galleries /></ProtectedRoute>} />
               <Route path="/gallery/:id" element={<ProtectedRoute><IPSLayout mode={ipsMode} /></ProtectedRoute>} />
+              <Route path="/gallery/:id/edit" element={<ProtectedRoute><GalleryView /></ProtectedRoute>} />
               <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
               <Route path="/session" element={<ProtectedRoute><CurrentSession /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />

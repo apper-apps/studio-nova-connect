@@ -23,11 +23,19 @@ const Galleries = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [showCreateModal, setShowCreateModal] = useState(false);
+const [showCreateModal, setShowCreateModal] = useState(false);
   const [showClientModal, setShowClientModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   
   // Form states
   const [galleryForm, setGalleryForm] = useState({
+    name: "",
+    clientId: "",
+    sessionDate: ""
+  });
+
+  const [editGalleryForm, setEditGalleryForm] = useState({
+    id: null,
     name: "",
     clientId: "",
     sessionDate: ""
@@ -77,7 +85,7 @@ if (searchQuery.trim() === "") {
     }
   };
 
-  const handleCreateGallery = async (e) => {
+const handleCreateGallery = async (e) => {
     e.preventDefault();
     
     if (!galleryForm.name || !galleryForm.clientId || !galleryForm.sessionDate) {
@@ -87,10 +95,9 @@ if (searchQuery.trim() === "") {
 
     try {
       const newGallery = await galleryService.create({
-        name: galleryForm.name,
-        clientId: galleryForm.clientId,
-        sessionDate: galleryForm.sessionDate,
-        images: []
+        Name: galleryForm.name,
+        client_id_c: parseInt(galleryForm.clientId),
+        session_date_c: galleryForm.sessionDate
       });
 
       setGalleries(prev => [newGallery, ...prev]);
@@ -101,6 +108,43 @@ if (searchQuery.trim() === "") {
       toast.error("Failed to create gallery");
       console.error("Error creating gallery:", err);
     }
+  };
+
+  const handleEditGallery = async (e) => {
+    e.preventDefault();
+    
+    if (!editGalleryForm.name || !editGalleryForm.clientId || !editGalleryForm.sessionDate) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    try {
+      const updatedGallery = await galleryService.update(editGalleryForm.id, {
+        Name: editGalleryForm.name,
+        client_id_c: parseInt(editGalleryForm.clientId),
+        session_date_c: editGalleryForm.sessionDate
+      });
+
+      setGalleries(prev => prev.map(gallery => 
+        gallery.Id === editGalleryForm.id ? { ...gallery, ...updatedGallery } : gallery
+      ));
+      setShowEditModal(false);
+      setEditGalleryForm({ id: null, name: "", clientId: "", sessionDate: "" });
+      toast.success("Gallery updated successfully!");
+    } catch (err) {
+      toast.error("Failed to update gallery");
+      console.error("Error updating gallery:", err);
+    }
+  };
+
+  const handleOpenEditModal = (gallery) => {
+    setEditGalleryForm({
+      id: gallery.Id,
+      name: gallery.Name,
+      clientId: gallery.client_id_c?.Id || gallery.clientId || "",
+      sessionDate: gallery.session_date_c || gallery.sessionDate || ""
+    });
+    setShowEditModal(true);
   };
 
   const handleCreateClient = async (e) => {
@@ -234,11 +278,11 @@ const getClientName = (clientId) => {
                         </div>
                       </div>
 
-                      <div className="flex gap-2 pt-3">
+<div className="flex gap-2 pt-3">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => navigate(`/gallery/${gallery.id}`)}
+                          onClick={() => navigate(`/gallery/${gallery.Id || gallery.id}`)}
                           className="flex-1"
                         >
                           <ApperIcon name="Eye" size={14} className="mr-2" />
@@ -247,7 +291,16 @@ const getClientName = (clientId) => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => navigate(`/session?galleryId=${gallery.id}`)}
+                          onClick={() => handleOpenEditModal(gallery)}
+                          className="flex-1"
+                        >
+                          <ApperIcon name="Edit" size={14} className="mr-2" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/session?galleryId=${gallery.Id || gallery.id}`)}
                           className="flex-1"
                         >
                           <ApperIcon name="Play" size={14} className="mr-2" />
@@ -264,7 +317,7 @@ const getClientName = (clientId) => {
       )}
 
       {/* Create Gallery Modal */}
-      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)}>
+<Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)}>
         <form onSubmit={handleCreateGallery}>
           <ModalHeader>
             <ModalTitle>Create New Gallery</ModalTitle>
@@ -289,7 +342,7 @@ const getClientName = (clientId) => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-accent focus:ring-2 focus:ring-accent/20"
               >
                 <option value="">Select Client</option>
-{clients.map(client => (
+                {clients.map(client => (
                   <option key={client.Id} value={client.Id}>
                     {client.first_name_c} {client.last_name_c}
                   </option>
@@ -310,6 +363,57 @@ const getClientName = (clientId) => {
               Cancel
             </Button>
             <Button type="submit">Create Gallery</Button>
+          </ModalFooter>
+        </form>
+      </Modal>
+
+      {/* Edit Gallery Modal */}
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)}>
+        <form onSubmit={handleEditGallery}>
+          <ModalHeader>
+            <ModalTitle>Edit Gallery</ModalTitle>
+          </ModalHeader>
+          <ModalContent className="space-y-4">
+            <FormField
+              label="Gallery Name"
+              required
+              value={editGalleryForm.name}
+              onChange={(e) => setEditGalleryForm(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="e.g., Summer Family Session"
+            />
+            
+            <div>
+              <label className="block text-sm font-medium text-primary mb-2">
+                Client <span className="text-error">*</span>
+              </label>
+              <select
+                required
+                value={editGalleryForm.clientId}
+                onChange={(e) => setEditGalleryForm(prev => ({ ...prev, clientId: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-accent focus:ring-2 focus:ring-accent/20"
+              >
+                <option value="">Select Client</option>
+                {clients.map(client => (
+                  <option key={client.Id} value={client.Id}>
+                    {client.first_name_c} {client.last_name_c}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <FormField
+              label="Session Date"
+              type="date"
+              required
+              value={editGalleryForm.sessionDate}
+              onChange={(e) => setEditGalleryForm(prev => ({ ...prev, sessionDate: e.target.value }))}
+            />
+          </ModalContent>
+          <ModalFooter>
+            <Button type="button" variant="outline" onClick={() => setShowEditModal(false)}>
+              Cancel
+            </Button>
+            <Button type="submit">Update Gallery</Button>
           </ModalFooter>
         </form>
       </Modal>

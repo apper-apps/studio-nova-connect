@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
+import ImageUploadZone from "@/components/organisms/ImageUploadZone";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@/components/atoms/Modal";
-import imageExportService from "@/services/api/imageExportService";
 import ApperIcon from "@/components/ApperIcon";
 import FormField from "@/components/molecules/FormField";
 import Button from "@/components/atoms/Button";
@@ -12,6 +12,7 @@ import SlideshowViewer from "@/components/organisms/SlideshowViewer";
 import GalleryGrid from "@/components/organisms/GalleryGrid";
 import Error from "@/components/ui/Error";
 import Loading from "@/components/ui/Loading";
+import imageExportService from "@/services/api/imageExportService";
 import imageService from "@/services/api/imageService";
 import clientService from "@/services/api/clientService";
 import galleryService from "@/services/api/galleryService";
@@ -26,15 +27,23 @@ const [selectedImages, setSelectedImages] = useState([]);
   const [showSlideshow, setShowSlideshow] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showImageUpload, setShowImageUpload] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [publishing, setPublishing] = useState(false);
   const [gallerySettings, setGallerySettings] = useState(null);
+  const [clients, setClients] = useState([]);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    clientId: "",
+    sessionDate: ""
+  });
   const [settingsForm, setSettingsForm] = useState({
     password: "",
     expiryDate: "",
     enableDownloads: false
-});
+  });
 
   useEffect(() => {
     if (id) {
@@ -265,6 +274,78 @@ try {
       console.error('Export error:', error);
       toast.error('Failed to export images. Please try again.');
     }
+};
+
+  const handleOpenEditModal = () => {
+    setEditForm({
+      name: gallery?.Name || "",
+      clientId: gallery?.client_id_c?.Id || gallery?.clientId || "",
+      sessionDate: gallery?.session_date_c || gallery?.sessionDate || ""
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateGallery = async (e) => {
+    e.preventDefault();
+    
+    if (!editForm.name || !editForm.clientId || !editForm.sessionDate) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+try {
+      await galleryService.update(id, {
+        Name: editForm.name,
+        client_id_c: parseInt(editForm.clientId),
+        session_date_c: editForm.sessionDate
+      });
+
+      // Refresh gallery data
+      await loadGallery();
+      setShowEditModal(false);
+      toast.success("Gallery updated successfully!");
+    } catch (err) {
+      toast.error("Failed to update gallery");
+      console.error("Error updating gallery:", err);
+    }
+  };
+
+  const handleImagesUploaded = async (uploadedImages) => {
+    try {
+      // Create images in database
+      const imagePromises = uploadedImages.map(imageData => 
+imageService.create({
+          ...imageData,
+          gallery_id_c: parseInt(id)
+        })
+      );
+
+      await Promise.all(imagePromises);
+      
+      // Refresh gallery data
+      await loadGallery();
+      setShowImageUpload(false);
+      toast.success(`Successfully added ${uploadedImages.length} images to gallery`);
+    } catch (error) {
+      toast.error("Failed to add some images to gallery");
+      console.error("Error adding images:", error);
+    }
+  };
+
+  const handleDeleteImage = async (imageId) => {
+    try {
+      await imageService.delete(imageId);
+      
+      // Update local state
+      setGallery(prev => ({
+        ...prev,
+        images: prev.images.filter(img => (img.Id || img.id) !== imageId)
+      }));
+      
+      toast.success("Image deleted successfully!");
+    } catch (error) {
+      toast.error("Failed to delete image");
+      console.error("Error deleting image:", error);
+    }
   };
 
   const handleClearSelection = () => {
@@ -327,7 +408,25 @@ try {
             </p>
           )}
         </div>
-        <div className="flex items-center gap-2">
+<div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleOpenEditModal}
+            className="flex items-center gap-2"
+          >
+            <ApperIcon name="Edit" size={16} />
+            Edit Gallery
+          </Button>
+          
+          <Button
+            variant="outline"
+            onClick={() => setShowImageUpload(true)}
+            className="flex items-center gap-2"
+          >
+            <ApperIcon name="Plus" size={16} />
+            Add Images
+          </Button>
+          
           <Button
             variant="outline"
             onClick={() => setShowSettings(true)}
@@ -362,7 +461,7 @@ try {
           )}
           
           <Button
-onClick={() => navigate(`/session?galleryId=${gallery.Id}`)}
+            onClick={() => navigate(`/session?galleryId=${gallery.Id}`)}
             className="flex items-center gap-2"
           >
             <ApperIcon name="Play" size={16} />
@@ -383,6 +482,7 @@ onClick={() => navigate(`/session?galleryId=${gallery.Id}`)}
         onPlaySlideshow={handlePlaySlideshow}
         onBulkRating={handleBulkRating}
         onClearSelection={handleClearSelection}
+        onDeleteImage={handleDeleteImage}
       />
 
       {/* Slideshow Viewer */}
@@ -447,6 +547,76 @@ onClick={() => navigate(`/session?galleryId=${gallery.Id}`)}
           </ModalFooter>
         </form>
 </Modal>
+{/* Edit Gallery Modal */}
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)}>
+        <form onSubmit={handleUpdateGallery}>
+          <ModalHeader>
+            <ModalTitle>Edit Gallery</ModalTitle>
+          </ModalHeader>
+          <ModalContent className="space-y-4">
+            <FormField
+              label="Gallery Name"
+              required
+              value={editForm.name}
+              onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="e.g., Summer Family Session"
+            />
+            
+            <div>
+              <label className="block text-sm font-medium text-primary mb-2">
+                Client <span className="text-error">*</span>
+              </label>
+              <select
+                required
+                value={editForm.clientId}
+                onChange={(e) => setEditForm(prev => ({ ...prev, clientId: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-accent focus:ring-2 focus:ring-accent/20"
+              >
+                <option value="">Select Client</option>
+                {clients.map(client => (
+                  <option key={client.Id} value={client.Id}>
+                    {client.first_name_c} {client.last_name_c}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <FormField
+              label="Session Date"
+              type="date"
+              required
+              value={editForm.sessionDate}
+              onChange={(e) => setEditForm(prev => ({ ...prev, sessionDate: e.target.value }))}
+            />
+          </ModalContent>
+          <ModalFooter>
+            <Button type="button" variant="outline" onClick={() => setShowEditModal(false)}>
+              Cancel
+            </Button>
+            <Button type="submit">Update Gallery</Button>
+          </ModalFooter>
+        </form>
+      </Modal>
+
+      {/* Image Upload Modal */}
+      <Modal isOpen={showImageUpload} onClose={() => setShowImageUpload(false)} size="lg">
+        <ModalHeader>
+          <ModalTitle>Add Images to Gallery</ModalTitle>
+        </ModalHeader>
+        <ModalContent>
+<ImageUploadZone
+            galleryId={id}
+            onImagesUploaded={handleImagesUploaded}
+            maxFiles={50}
+          />
+        </ModalContent>
+        <ModalFooter>
+          <Button variant="outline" onClick={() => setShowImageUpload(false)}>
+            Done
+          </Button>
+        </ModalFooter>
+      </Modal>
+
     </div>
   );
 };
