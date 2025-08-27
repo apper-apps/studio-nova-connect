@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import Button from "@/components/atoms/Button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/atoms/Card";
-import { Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter } from "@/components/atoms/Modal";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/atoms/Card";
+import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@/components/atoms/Modal";
+import ApperIcon from "@/components/ApperIcon";
 import FormField from "@/components/molecules/FormField";
 import SearchBar from "@/components/molecules/SearchBar";
-import ApperIcon from "@/components/ApperIcon";
-import Loading from "@/components/ui/Loading";
-import Empty from "@/components/ui/Empty";
+import Button from "@/components/atoms/Button";
 import Error from "@/components/ui/Error";
+import Empty from "@/components/ui/Empty";
+import Loading from "@/components/ui/Loading";
 import productService from "@/services/api/productService";
 
 const Products = () => {
@@ -80,10 +80,9 @@ const Products = () => {
         ...productForm,
         sizes: validSizes
       };
-
-      if (editingProduct) {
-        const updatedProduct = await productService.update(editingProduct.id, productData);
-        setProducts(prev => prev.map(p => p.id === editingProduct.id ? updatedProduct : p));
+if (editingProduct && editingProduct.Id) {
+        const updatedProduct = await productService.update(editingProduct.Id, productData);
+        setProducts(prev => prev.map(p => p.Id === editingProduct.Id ? updatedProduct : p));
         toast.success("Product updated successfully!");
       } else {
         const newProduct = await productService.create(productData);
@@ -108,14 +107,24 @@ const Products = () => {
     setShowCreateModal(true);
   };
 
-  const handleDeleteProduct = async (product) => {
-    if (window.confirm(`Are you sure you want to delete "${product.name}"?`)) {
+const handleDeleteProduct = async (product) => {
+    if (!product || !product.Id) {
+      toast.error("Cannot delete product: Invalid product data");
+      return;
+    }
+
+    if (window.confirm(`Are you sure you want to delete "${product.Name || product.name}"?`)) {
       try {
-        await productService.delete(product.id);
-        setProducts(prev => prev.filter(p => p.id !== product.id));
+        await productService.delete(product.Id);
+        setProducts(prev => prev.filter(p => p.Id !== product.Id));
         toast.success("Product deleted successfully!");
       } catch (err) {
-        toast.error("Failed to delete product");
+        if (err.message === "Record does not exist") {
+          toast.error("Product no longer exists and has been removed from the list");
+          setProducts(prev => prev.filter(p => p.Id !== product.Id));
+        } else {
+          toast.error("Failed to delete product");
+        }
         console.error("Error deleting product:", err);
       }
     }
@@ -292,9 +301,9 @@ const resetForm = () => {
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProducts.map((product, index) => (
+{filteredProducts.filter(product => product && product.Id).map((product, index) => (
             <motion.div
-              key={product.id}
+              key={product.Id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.1 }}
