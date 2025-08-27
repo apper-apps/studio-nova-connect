@@ -69,10 +69,11 @@ class FavoriteImageService {
             FieldName: "gallery_id_c", 
             Operator: "EqualTo",
             Values: [parseInt(galleryId)]
-          }
+}
         ]
-]
       };
+
+      const response = await this.apperClient.fetchRecords(this.tableName, params);
       
       if (!response.success) {
         console.error(response.message);
