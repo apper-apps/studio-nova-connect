@@ -44,12 +44,12 @@ const Galleries = () => {
   }, []);
 
   useEffect(() => {
-    if (searchQuery.trim() === "") {
+if (searchQuery.trim() === "") {
       setFilteredGalleries(galleries);
     } else {
       const filtered = galleries.filter(gallery => {
-        const client = clients.find(c => c.id === gallery.clientId);
-        const clientName = client ? `${client.firstName} ${client.lastName}` : "";
+        const client = clients.find(c => c.Id === gallery.clientId);
+        const clientName = client ? `${client.first_name_c} ${client.last_name_c}` : "";
         return gallery.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                clientName.toLowerCase().includes(searchQuery.toLowerCase());
       });
@@ -123,9 +123,9 @@ const Galleries = () => {
     }
   };
 
-  const getClientName = (clientId) => {
-    const client = clients.find(c => c.id === clientId);
-    return client ? `${client.firstName} ${client.lastName}` : "Unknown Client";
+const getClientName = (clientId) => {
+    const client = clients.find(c => c.Id === clientId);
+    return client ? `${client.first_name_c} ${client.last_name_c}` : "Unknown Client";
   };
 
   const getGalleryStats = (gallery) => {
@@ -289,9 +289,9 @@ const Galleries = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-accent focus:ring-2 focus:ring-accent/20"
               >
                 <option value="">Select Client</option>
-                {clients.map(client => (
-                  <option key={client.id} value={client.id}>
-                    {client.firstName} {client.lastName}
+{clients.map(client => (
+                  <option key={client.Id} value={client.Id}>
+                    {client.first_name_c} {client.last_name_c}
                   </option>
                 ))}
               </select>
