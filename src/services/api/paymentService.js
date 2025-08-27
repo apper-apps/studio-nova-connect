@@ -19,8 +19,9 @@ class PaymentService {
           { field: { Name: "payment_date_c" } },
           { field: { Name: "payment_status_c" } },
           { field: { Name: "client_c" } },
-          { field: { Name: "sales_opportunity_c" } },
-          { field: { Name: "stripe_transaction_id_c" } }
+{ field: { Name: "sales_opportunity_c" } },
+          { field: { Name: "stripe_transaction_id_c" } },
+          { field: { Name: "payment_method_c" } }
         ],
         orderBy: [
           { fieldName: "payment_date_c", sorttype: "DESC" }
@@ -51,8 +52,9 @@ class PaymentService {
           { field: { Name: "payment_date_c" } },
           { field: { Name: "payment_status_c" } },
           { field: { Name: "client_c" } },
-          { field: { Name: "sales_opportunity_c" } },
-          { field: { Name: "stripe_transaction_id_c" } }
+{ field: { Name: "sales_opportunity_c" } },
+          { field: { Name: "stripe_transaction_id_c" } },
+          { field: { Name: "payment_method_c" } }
         ]
       };
 
@@ -87,9 +89,10 @@ class PaymentService {
           payment_amount_c: parseFloat(paymentData.payment_amount_c || paymentData.amount || 0),
           payment_date_c: paymentData.payment_date_c || new Date().toISOString(),
           payment_status_c: paymentData.payment_status_c || paymentData.status || 'Completed',
-          client_c: paymentData.client_c ? parseInt(paymentData.client_c) : null,
+client_c: paymentData.client_c ? parseInt(paymentData.client_c) : null,
           sales_opportunity_c: paymentData.sales_opportunity_c ? parseInt(paymentData.sales_opportunity_c) : null,
-          stripe_transaction_id_c: paymentData.stripe_transaction_id_c || paymentData.stripeTransactionId
+          stripe_transaction_id_c: paymentData.stripe_transaction_id_c || paymentData.stripeTransactionId,
+          payment_method_c: paymentData.payment_method_c || paymentData.paymentMethod || "Cash"
         }]
       };
 
@@ -126,9 +129,10 @@ class PaymentService {
           payment_amount_c: parseFloat(paymentData.payment_amount_c || paymentData.amount || 0),
           payment_date_c: paymentData.payment_date_c || paymentData.paymentDate,
           payment_status_c: paymentData.payment_status_c || paymentData.status,
-          client_c: paymentData.client_c ? parseInt(paymentData.client_c) : null,
+client_c: paymentData.client_c ? parseInt(paymentData.client_c) : null,
           sales_opportunity_c: paymentData.sales_opportunity_c ? parseInt(paymentData.sales_opportunity_c) : null,
-          stripe_transaction_id_c: paymentData.stripe_transaction_id_c || paymentData.stripeTransactionId
+          stripe_transaction_id_c: paymentData.stripe_transaction_id_c || paymentData.stripeTransactionId,
+          payment_method_c: paymentData.payment_method_c || paymentData.paymentMethod
         }]
       };
 

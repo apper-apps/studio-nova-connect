@@ -23,7 +23,7 @@ class InvoiceService {
           { field: { Name: "status_c" } },
           { field: { Name: "sales_opportunity_c" } },
           { field: { Name: "file_path_c" } },
-          { field: { Name: "payments_received_c" } },
+{ field: { Name: "payments_received_c" } },
           { field: { Name: "balance_due_c" } },
           { field: { Name: "legal_clause_c" } }
         ],
@@ -60,7 +60,7 @@ class InvoiceService {
           { field: { Name: "status_c" } },
           { field: { Name: "sales_opportunity_c" } },
           { field: { Name: "file_path_c" } },
-          { field: { Name: "payments_received_c" } },
+{ field: { Name: "payments_received_c" } },
           { field: { Name: "balance_due_c" } },
           { field: { Name: "legal_clause_c" } }
         ]
@@ -102,7 +102,7 @@ class InvoiceService {
           status_c: invoiceData.status_c || invoiceData.status || "Unpaid",
           sales_opportunity_c: invoiceData.sales_opportunity_c ? parseInt(invoiceData.sales_opportunity_c) : undefined,
           file_path_c: invoiceData.file_path_c || invoiceData.filePath || "",
-          payments_received_c: parseFloat(invoiceData.payments_received_c || invoiceData.paymentsReceived || 0),
+payments_received_c: parseFloat(invoiceData.payments_received_c || invoiceData.paymentsReceived || 0),
           balance_due_c: parseFloat(invoiceData.balance_due_c || invoiceData.balanceDue || 0),
           legal_clause_c: invoiceData.legal_clause_c || invoiceData.legalClause || "All sales are final. Digital files are delivered within 2-3 business days of full payment. Print orders require 5-7 business days for processing. Client is responsible for any applicable taxes. By signing below, client agrees to these terms and conditions."
         }]
@@ -146,7 +146,7 @@ class InvoiceService {
           status_c: invoiceData.status_c || invoiceData.status,
           sales_opportunity_c: invoiceData.sales_opportunity_c ? parseInt(invoiceData.sales_opportunity_c) : undefined,
           file_path_c: invoiceData.file_path_c || invoiceData.filePath,
-          payments_received_c: parseFloat(invoiceData.payments_received_c || invoiceData.paymentsReceived || 0),
+payments_received_c: parseFloat(invoiceData.payments_received_c || invoiceData.paymentsReceived || 0),
           balance_due_c: parseFloat(invoiceData.balance_due_c || invoiceData.balanceDue || 0),
           legal_clause_c: invoiceData.legal_clause_c || invoiceData.legalClause
         }]
