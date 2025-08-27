@@ -629,57 +629,7 @@ const [selectedProduct, setSelectedProduct] = useState("");
         </ModalFooter>
       </Modal>
 
-      {/* Mobile Backdrop */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-20 lg:hidden"
-          onClick={onToggle}
-        />
-      )}
-        <ModalHeader>
-          <ModalTitle>Add Order Adjustment</ModalTitle>
-        </ModalHeader>
-        <ModalContent className="space-y-4">
-          <div>
-            <Label>Adjustment Type</Label>
-            <select
-              value={adjustmentType}
-              onChange={(e) => setAdjustmentType(e.target.value)}
-              className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:border-accent focus:ring-2 focus:ring-accent/20"
-            >
-              <option value="Sitting Fee">Sitting Fee</option>
-              <option value="Discount">Discount</option>
-            </select>
-          </div>
-          
-          <FormField
-            label="Amount"
-            type="number"
-            step="0.01"
-            min="0"
-            value={adjustmentAmount}
-            onChange={(e) => setAdjustmentAmount(e.target.value)}
-            placeholder="0.00"
-            required
-          />
-          
-          <FormField
-            label="Description"
-            value={adjustmentDescription}
-            onChange={(e) => setAdjustmentDescription(e.target.value)}
-            placeholder="e.g., Session fee, Holiday discount"
-            required
-          />
-        </ModalContent>
-        <ModalFooter>
-          <Button variant="outline" onClick={() => setShowAdjustmentModal(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleAddAdjustment}>
-            Add {adjustmentType}
-          </Button>
-        </ModalFooter>
-      </Modal>
+{/* Payment Recording Modal */}
 
       {/* Payment Recording Modal */}
       <Modal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)}>
