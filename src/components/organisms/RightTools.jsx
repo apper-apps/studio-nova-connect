@@ -581,11 +581,11 @@ const renderActionsSection = () => (
           No artwork placed yet. Drag images from the sidebar to start designing.
         </div>
       )}
-    </div>
 </div>
   );
 
   return (
+    <div className={cn(
       "bg-white border-l border-gray-200 transition-all duration-300 flex flex-col",
       collapsed ? "w-12" : "w-80"
     )}>
