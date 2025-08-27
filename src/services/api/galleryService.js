@@ -62,9 +62,13 @@ fields: [
         ]
       };
 
-      const response = await this.apperClient.getRecordById(this.tableName, parseInt(id), params);
+const response = await this.apperClient.getRecordById(this.tableName, parseInt(id), params);
       
       if (!response.success) {
+        if (response.message === "Record does not exist") {
+          console.log(`Gallery with ID ${id} does not exist`);
+          return null;
+        }
         console.error(response.message);
         throw new Error(response.message);
       }

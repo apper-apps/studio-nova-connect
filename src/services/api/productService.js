@@ -55,24 +55,25 @@ class ProductService {
         ]
       };
 
-      const response = await this.apperClient.getRecordById(this.tableName, parseInt(id), params);
+const response = await this.apperClient.getRecordById(this.tableName, parseInt(id), params);
       
       if (!response.success) {
-        console.error(response.message);
+        if (response.message === "Record does not exist") {
+          console.log(`Product with ID ${id} does not exist`);
+          return null;
+        }
+        console.error("Error fetching product by ID:", response.message);
         throw new Error(response.message);
       }
 
-      // Parse sizes_c field from multiline text to JSON array
-      const product = {
-        ...response.data,
-        category: response.data.category_c,
-        sizes: response.data.sizes_c ? JSON.parse(response.data.sizes_c) : []
-      };
-
-      return product;
+      return response.data;
     } catch (error) {
-      console.error(`Error fetching product with ID ${id}:`, error.message);
-      throw error;
+      if (error?.response?.data?.message) {
+        console.error("Error fetching product by ID:", error?.response?.data?.message);
+      } else {
+        console.error("Error fetching product by ID:", error);
+      }
+return null;
     }
   }
 

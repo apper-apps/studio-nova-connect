@@ -26,37 +26,30 @@ class ImageService {
           {
             FieldName: "gallery_id_c",
             Operator: "EqualTo",
-            Values: [parseInt(galleryId)]
+Values: [parseInt(galleryId)]
           }
-        ],
-        orderBy: [
-          { fieldName: "order_c", sorttype: "ASC" }
         ]
       };
 
       const response = await this.apperClient.fetchRecords(this.tableName, params);
       
       if (!response.success) {
-        console.error(response.message);
-        throw new Error(response.message);
+        if (response.message === "Record does not exist") {
+          console.log(`No images found for gallery ID ${galleryId}`);
+          return [];
+        }
+        console.error("Error fetching images by gallery ID:", response.message);
+        return [];
       }
 
-      // Transform response data for consistency with existing code
-      const images = response.data?.map(image => ({
-        ...image,
-        id: image.Id,
-        galleryId: image.gallery_id_c?.Id || image.gallery_id_c,
-        originalUrl: image.original_url_c,
-        proofingUrl: image.proofing_url_c,
-        thumbnailUrl: image.thumbnail_url_c,
-        rating: image.rating_c || "unrated",
-        order: image.order_c || 1
-      })) || [];
-
-      return images;
+      return response.data || [];
     } catch (error) {
-      console.error("Error fetching images for gallery:", error.message);
-      throw error;
+      if (error?.response?.data?.message) {
+        console.error("Error fetching images by gallery ID:", error?.response?.data?.message);
+      } else {
+        console.error("Error fetching images by gallery ID:", error);
+      }
+return [];
     }
   }
 
@@ -176,9 +169,9 @@ order_c: imageData.order_c || imageData.order || 1,
       return true;
     } catch (error) {
       console.error("Error deleting image:", error.message);
-      throw error;
+throw error;
     }
-}
+  }
 
   async bulkUpdateRating(imageIds, rating) {
     try {
