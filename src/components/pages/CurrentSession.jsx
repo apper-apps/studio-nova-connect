@@ -87,11 +87,12 @@ if (galleryData.client_id_c) {
   };
 
 const handleImageToggleBlackWhite = async (imageId) => {
-    try {
+try {
       const image = gallery.images.find(img => img.Id === imageId);
       const currentEffect = image?.effect_type_c;
       const newEffect = currentEffect === 'Black and White' ? null : 'Black and White';
       
+      const { default: imageService } = await import('@/services/api/imageService');
       await imageService.update(imageId, {
         effect_type_c: newEffect
       });

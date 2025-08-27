@@ -582,98 +582,10 @@ const renderActionsSection = () => (
         </div>
       )}
     </div>
-  );
-};
-
-  const renderActionsSection = () => (
-    <div className="space-y-4">
-      {selectedImages.length > 0 && (
-        <div className="space-y-3">
-          <h4 className="font-medium text-primary">Image Effects</h4>
-          
-          {/* Toggle B&W Button */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={async () => {
-              try {
-                const { default: imageService } = await import('@/services/api/imageService');
-                
-                for (const image of selectedImages) {
-                  const currentEffect = image.effect_type_c;
-                  const newEffect = currentEffect === 'Black and White' ? null : 'Black and White';
-                  
-                  await imageService.update(image.Id, {
-                    effect_type_c: newEffect
-                  });
-                }
-                
-                toast.success(`Applied ${selectedImages.length > 1 ? `to ${selectedImages.length} images` : 'to image'}`);
-              } catch (error) {
-                console.error('Error updating image effects:', error);
-                toast.error('Failed to update image effects');
-              }
-            }}
-          >
-            <ApperIcon name="Palette" size={16} className="mr-2" />
-            Toggle B&W
-          </Button>
-
-          <div className="border-t pt-3">
-            <h4 className="font-medium text-primary mb-3">Cropping Tools</h4>
-            <div className="grid grid-cols-1 gap-2">
-              <Button
-                variant="outline" 
-                size="sm"
-                onClick={() => {
-                  // Handle free-form cropping
-                  toast.info('Free-form cropping selected');
-                }}
-              >
-                <ApperIcon name="Crop" size={16} className="mr-2" />
-                Free Form
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm" 
-                onClick={() => {
-                  // Handle square cropping
-                  toast.info('Square cropping selected');
-                }}
-              >
-                <ApperIcon name="Square" size={16} className="mr-2" />
-                Square
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  // Handle maintain ratio cropping
-                  toast.info('Maintain ratio cropping selected');
-                }}
-              >
-                <ApperIcon name="AspectRatio" size={16} className="mr-2" />
-                Maintain Ratio
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {selectedImages.length === 0 && (
-        <div className="text-center text-gray-500 py-8">
-          <ApperIcon name="MousePointer" size={32} className="mx-auto mb-2" />
-          <p className="text-sm">Select images to access editing tools</p>
-        </div>
-      )}
-    </div>
+</div>
   );
 
   return (
-    <div className={cn(
       "bg-white border-l border-gray-200 transition-all duration-300 flex flex-col",
       collapsed ? "w-12" : "w-80"
     )}>
