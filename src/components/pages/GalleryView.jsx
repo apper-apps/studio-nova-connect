@@ -151,14 +151,32 @@ const updatedGallery = await galleryService.update(gallery.Id, {
     }
   };
 
-  const handleImageToggleBlackWhite = (imageId) => {
-    setBlackWhiteImages(prev => {
-      if (prev.includes(imageId)) {
-        return prev.filter(id => id !== imageId);
-      } else {
-        return [...prev, imageId];
-      }
-    });
+const handleImageToggleBlackWhite = async (imageId) => {
+    try {
+      const image = gallery.images.find(img => img.Id === imageId);
+      const currentEffect = image?.effect_type_c;
+      const newEffect = currentEffect === 'Black and White' ? null : 'Black and White';
+      
+      await imageService.update(imageId, {
+        effect_type_c: newEffect
+      });
+      
+      // Update local state for immediate visual feedback
+      setBlackWhiteImages(prev => {
+        if (prev.includes(imageId)) {
+          return prev.filter(id => id !== imageId);
+        } else {
+          return [...prev, imageId];
+        }
+      });
+      
+      // Refresh gallery data to get updated effects
+      await loadGallery();
+      
+    } catch (error) {
+      console.error('Error updating image effect:', error);
+      toast.error('Failed to update image effect');
+    }
   };
 
 const handleRatingChange = async (imageId, rating) => {

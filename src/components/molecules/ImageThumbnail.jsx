@@ -19,10 +19,9 @@ isBlackWhite,
       case "no": return { icon: "Frown", color: "bg-error" };
       default: return null;
     }
-  };
+};
 
-  const ratingInfo = getRatingIcon(image.rating);
-
+  const ratingInfo = getRatingIcon(image.rating_c || image.rating);
   return (
     <motion.div
       whileHover={{ scale: 1.02 }}
@@ -34,12 +33,12 @@ isBlackWhite,
       )}
 onClick={(e) => onSelect(image, e.shiftKey)}
     >
-      <img
-        src={image.thumbnailUrl}
-        alt={`Image ${image.id}`}
+<img
+        src={image.thumbnail_url_c || image.thumbnailUrl}
+        alt={`Image ${image.Id || image.id}`}
         className={cn(
           "w-full h-full object-cover transition-all duration-200",
-          isBlackWhite && "grayscale",
+          (isBlackWhite || image.effect_type_c === 'Black and White') && "grayscale",
           "group-hover:brightness-110"
         )}
         loading="lazy"
