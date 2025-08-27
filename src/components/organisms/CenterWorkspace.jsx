@@ -307,9 +307,9 @@ const renderWallDesignerMode = () => {
                   blackWhite: false,
                   rotation: 0
                 })
-              };
+};
               
-              setImagePlacements(prev => [...prev, { ...newPlacement, tempId: Date.now(), imageData }]);
+              onImagePlacementChange(prev => [...prev, { ...newPlacement, tempId: Date.now(), imageData }]);
             } catch (error) {
               console.error('Error parsing dropped image data:', error);
             }
@@ -410,9 +410,9 @@ const renderWallDesignerMode = () => {
                         const newCropDetails = { ...cropDetails, blackWhite: !cropDetails.blackWhite };
                         const updatedPlacement = {
                           ...placement,
-                          crop_details_c: JSON.stringify(newCropDetails)
+crop_details_c: JSON.stringify(newCropDetails)
                         };
-                        setImagePlacements(prev => prev.map(p => 
+                        onImagePlacementChange(prev => prev.map(p => 
                           (p.tempId === placement.tempId || p.Id === placement.Id) ? updatedPlacement : p
                         ));
                       }}
@@ -431,9 +431,9 @@ const renderWallDesignerMode = () => {
                     >
                       <ApperIcon name="Crop" size={14} />
                     </button>
-                    <button
+<button
                       onClick={() => {
-                        setImagePlacements(prev => prev.filter(p => 
+                        onImagePlacementChange(prev => prev.filter(p => 
                           p.tempId !== placement.tempId && p.Id !== placement.Id
                         ));
                         setSelectedPlacement(null);
