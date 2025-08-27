@@ -26,7 +26,7 @@ const SlideshowViewer = ({
     setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
   }, [images.length]);
 
-  const handleKeyPress = useCallback((e) => {
+const handleKeyPress = useCallback((e) => {
     if (!isOpen) return;
     
     switch (e.key) {
@@ -48,8 +48,57 @@ const SlideshowViewer = ({
         e.preventDefault();
         setIsPlaying(!isPlaying);
         break;
+      case "Enter":
+        e.preventDefault();
+        // Cycle through ratings: unrated -> yes -> maybe -> no -> unrated
+        if (currentImage && onRatingChange) {
+          const currentRating = currentImage.rating || 'unrated';
+          let newRating;
+          switch (currentRating) {
+            case 'unrated':
+              newRating = 'yes';
+              break;
+            case 'yes':
+              newRating = 'maybe';
+              break;
+            case 'maybe':
+              newRating = 'no';
+              break;
+            case 'no':
+              newRating = 'unrated';
+              break;
+            default:
+              newRating = 'yes';
+          }
+          onRatingChange(currentImage.id, newRating);
+        }
+        break;
+      case "1":
+        e.preventDefault();
+        if (currentImage && onRatingChange) {
+          onRatingChange(currentImage.id, 'yes');
+        }
+        break;
+      case "2":
+        e.preventDefault();
+        if (currentImage && onRatingChange) {
+          onRatingChange(currentImage.id, 'maybe');
+        }
+        break;
+      case "3":
+        e.preventDefault();
+        if (currentImage && onRatingChange) {
+          onRatingChange(currentImage.id, 'no');
+        }
+        break;
+      case "4":
+        e.preventDefault();
+        if (currentImage && onRatingChange) {
+          onRatingChange(currentImage.id, 'unrated');
+        }
+        break;
     }
-  }, [isOpen, nextImage, prevImage, onClose, isPlaying]);
+  }, [isOpen, nextImage, prevImage, onClose, isPlaying, currentImage, onRatingChange]);
 
   useEffect(() => {
     if (isOpen) {
@@ -170,7 +219,7 @@ const SlideshowViewer = ({
                 </Button>
                 
                 <div className="text-white text-sm">
-                  Press Space or → for next image
+Press Space/→ for next • Enter to rate • 1-4 for direct rating
                 </div>
               </div>
             </div>

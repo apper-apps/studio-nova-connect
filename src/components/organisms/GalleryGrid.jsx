@@ -129,7 +129,7 @@ selectedImages = [],
                 image={image}
                 isSelected={selectedImages.some(selected => selected.id === image.id)}
                 isBlackWhite={blackWhiteImages.includes(image.id)}
-                onSelect={(img) => handleImageSelect(img, false)}
+onSelect={(img, isShiftClick) => handleImageSelect(img, isShiftClick)}
                 onToggleBlackWhite={() => onImageToggleBlackWhite(image.id)}
               />
             </motion.div>

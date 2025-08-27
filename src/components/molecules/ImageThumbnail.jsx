@@ -6,8 +6,8 @@ import { cn } from "@/utils/cn";
 const ImageThumbnail = ({ 
   image, 
   isSelected, 
-  isBlackWhite,
-  onSelect, 
+isBlackWhite,
+  onSelect,
   onToggleBlackWhite,
   showRating = true,
   className 
@@ -32,7 +32,7 @@ const ImageThumbnail = ({
         isSelected ? "border-accent shadow-lg" : "border-transparent hover:border-gray-300",
         className
       )}
-      onClick={() => onSelect(image)}
+onClick={(e) => onSelect(image, e.shiftKey)}
     >
       <img
         src={image.thumbnailUrl}
