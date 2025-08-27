@@ -31,11 +31,22 @@ class ProductService {
       }
 
       // Parse sizes_c field from multiline text to JSON array
-      const products = response.data?.map(product => ({
-        ...product,
-        category: product.category_c,
-        sizes: product.sizes_c ? JSON.parse(product.sizes_c) : []
-      })) || [];
+const products = response.data?.map(product => {
+        let sizes = [];
+        if (product.sizes_c) {
+          try {
+            sizes = JSON.parse(product.sizes_c);
+          } catch (error) {
+            console.warn('Failed to parse sizes_c for product:', product.Id, error);
+            sizes = [];
+          }
+        }
+        return {
+          ...product,
+          category: product.category_c,
+          sizes: sizes
+        };
+      }) || [];
 
       return products;
     } catch (error) {
@@ -104,10 +115,19 @@ return null;
         }
 
         // Transform response data for consistency
+let sizes = [];
+        if (response.results[0].data.sizes_c) {
+          try {
+            sizes = JSON.parse(response.results[0].data.sizes_c);
+          } catch (error) {
+            console.warn('Failed to parse sizes_c for created product:', response.results[0].data.Id, error);
+            sizes = [];
+          }
+        }
         const createdProduct = {
           ...response.results[0].data,
           category: response.results[0].data.category_c,
-          sizes: response.results[0].data.sizes_c ? JSON.parse(response.results[0].data.sizes_c) : []
+          sizes: sizes
         };
 
         return createdProduct;
@@ -146,10 +166,19 @@ return null;
         }
 
         // Transform response data for consistency
+let sizes = [];
+        if (response.results[0].data.sizes_c) {
+          try {
+            sizes = JSON.parse(response.results[0].data.sizes_c);
+          } catch (error) {
+            console.warn('Failed to parse sizes_c for updated product:', response.results[0].data.Id, error);
+            sizes = [];
+          }
+        }
         const updatedProduct = {
           ...response.results[0].data,
           category: response.results[0].data.category_c,
-          sizes: response.results[0].data.sizes_c ? JSON.parse(response.results[0].data.sizes_c) : []
+          sizes: sizes
         };
 
         return updatedProduct;
