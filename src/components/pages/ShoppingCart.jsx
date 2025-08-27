@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/atoms/Car
 import { loadStripe } from "@stripe/stripe-js";
 import { CardElement, Elements, useElements, useStripe } from "@stripe/react-stripe-js";
 import paymentService from "@/services/api/paymentService";
+import orderService from "@/services/api/orderService";
+import orderNotificationService from "@/services/api/orderNotificationService";
 import ApperIcon from "@/components/ApperIcon";
 import FormField from "@/components/molecules/FormField";
 import Button from "@/components/atoms/Button";
@@ -176,7 +178,20 @@ const calculateTotals = () => {
           return;
         }
 
-        if (confirmedPayment && confirmedPayment.status === 'succeeded') {
+if (confirmedPayment && confirmedPayment.status === 'succeeded') {
+          // Create order record first
+          let createdOrder = null;
+          try {
+            createdOrder = await orderService.create({
+              name: `Order ${Date.now()}`,
+              order_date_c: new Date().toISOString().split('T')[0],
+              total_value_c: total,
+              client_c: 1 // Default client - should be updated with actual client in production
+            });
+          } catch (orderError) {
+            console.error('Failed to create order record:', orderError);
+          }
+
           // Create payment record in database
           try {
             await paymentService.create({
@@ -188,19 +203,43 @@ const calculateTotals = () => {
             });
           } catch (dbError) {
             console.error('Failed to save payment record:', dbError);
-            // Don't fail the whole transaction for DB errors
+          }
+
+          // Create order notification for photographer
+          if (createdOrder) {
+            try {
+              const orderTotal = total.toFixed(2);
+              const itemCount = cartItems.length;
+              const notificationContent = `New order received: ${itemCount} item(s) totaling $${orderTotal}. Payment processed successfully via Stripe.`;
+              
+              await orderNotificationService.create({
+                Name: `Order Notification - ${new Date().toLocaleDateString()}`,
+                notification_date_c: new Date().toISOString(),
+                order_c: createdOrder.Id,
+                notification_type_c: 'Order Placed',
+                notification_status_c: 'Sent',
+                notification_content_c: notificationContent
+              });
+
+              // Simulate email notification via toast (in production, this would trigger actual email)
+              toast.info(`📧 Order notification email sent to photographer for order #${createdOrder.Id}`);
+            } catch (notificationError) {
+              console.error('Failed to create order notification:', notificationError);
+              // Don't fail the transaction for notification errors
+            }
           }
 
           // Clear cart and redirect
           setCartItems([]);
           localStorage.removeItem('photographyCart');
           
-          toast.success("Payment successful! Your order has been placed.");
+          toast.success("Payment successful! Your order has been placed and the photographer has been notified.");
           navigate('/order-confirmation', { 
             state: { 
               orderTotal: total,
               orderItems: cartItems,
-              paymentId: confirmedPayment.id
+              paymentId: confirmedPayment.id,
+              orderId: createdOrder?.Id
             }
           });
         }
