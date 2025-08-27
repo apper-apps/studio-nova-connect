@@ -21,7 +21,10 @@ const Products = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   
-  // Form states
+// Form states
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [availableTemplates, setAvailableTemplates] = useState([]);
+  const [templateLoading, setTemplateLoading] = useState(false);
   const [productForm, setProductForm] = useState({
     name: "",
     category: "",
@@ -118,14 +121,105 @@ const Products = () => {
     }
   };
 
-  const resetForm = () => {
+const resetForm = () => {
     setShowCreateModal(false);
     setEditingProduct(null);
+    setSelectedTemplate(null);
     setProductForm({
       name: "",
       category: "",
       sizes: [{ size: "", price: 0 }]
     });
+  };
+
+  const loadTemplates = async () => {
+    try {
+      setTemplateLoading(true);
+      const { default: productTemplateService } = await import('@/services/api/productTemplateService');
+      const templates = await productTemplateService.getAll();
+      setAvailableTemplates(templates);
+    } catch (error) {
+      console.error("Error loading templates:", error);
+      toast.error("Failed to load templates");
+    } finally {
+      setTemplateLoading(false);
+    }
+  };
+
+  const handleTemplateSelect = async (templateId) => {
+    if (!templateId) {
+      setSelectedTemplate(null);
+      setProductForm({
+        name: "",
+        category: "",
+        sizes: [{ size: "", price: 0 }]
+      });
+      return;
+    }
+
+    try {
+      const template = availableTemplates.find(t => t.Id === parseInt(templateId));
+      if (!template) return;
+
+      setSelectedTemplate(template);
+      
+      // Load size/price combinations for this template
+      const { default: sizePriceCombinationService } = await import('@/services/api/sizePriceCombinationService');
+      const combinations = await sizePriceCombinationService.getByTemplateId(templateId);
+      
+      // Populate form with template data
+      setProductForm({
+        name: template.name || template.Name,
+        category: "Package", // Default category for templates
+        sizes: combinations.length > 0 ? combinations.map(combo => ({
+          size: combo.size,
+          price: combo.price
+        })) : [{ size: "", price: 0 }]
+      });
+      
+      toast.success(`Template "${template.name}" loaded successfully`);
+    } catch (error) {
+      console.error("Error loading template:", error);
+      toast.error("Failed to load template data");
+    }
+  };
+
+  const handleSaveAsTemplate = async () => {
+    if (!productForm.name || productForm.sizes.length === 0) {
+      toast.error("Please fill in product details before saving as template");
+      return;
+    }
+
+    const templateName = window.prompt("Enter template name:", `${productForm.name} Template`);
+    if (!templateName) return;
+
+    const templateDescription = window.prompt("Enter template description (optional):", `Template for ${productForm.category} products`);
+
+    try {
+      const { default: productTemplateService } = await import('@/services/api/productTemplateService');
+      const { default: sizePriceCombinationService } = await import('@/services/api/sizePriceCombinationService');
+
+      // Create template
+      const template = await productTemplateService.create({
+        name: templateName,
+        description: templateDescription || "",
+        productId: null // Not linked to specific product
+      });
+
+      // Create size/price combinations
+      const validSizes = productForm.sizes.filter(size => size.size && size.price > 0);
+      if (validSizes.length > 0) {
+        await sizePriceCombinationService.createForTemplate(template.Id, validSizes);
+      }
+
+      toast.success(`Template "${templateName}" created successfully`);
+      
+      // Reload templates list
+      await loadTemplates();
+    } catch (error) {
+      console.error("Error saving template:", error);
+      toast.error("Failed to save template");
+    }
   };
 
   const addSize = () => {
@@ -150,7 +244,12 @@ const Products = () => {
       )
     }));
   };
-
+// Load templates when modal opens
+  useEffect(() => {
+    if (showCreateModal) {
+      loadTemplates();
+    }
+  }, [showCreateModal]);
   if (loading) {
     return <Loading type="cards" />;
   }
@@ -263,7 +362,33 @@ const Products = () => {
               {editingProduct ? "Edit Product" : "Add New Product"}
             </ModalTitle>
           </ModalHeader>
-          <ModalContent className="space-y-4">
+<ModalContent className="space-y-4">
+            {/* Template Selection */}
+            <div>
+              <label className="block text-sm font-medium text-primary mb-2">
+                Start from Template (Optional)
+              </label>
+              {templateLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-accent"></div>
+                </div>
+              ) : (
+                <select
+                  value={selectedTemplate?.Id || ""}
+                  onChange={(e) => handleTemplateSelect(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-accent focus:ring-2 focus:ring-accent/20"
+                >
+                  <option value="">Select a template...</option>
+                  {availableTemplates.map((template) => (
+                    <option key={template.Id} value={template.Id}>
+                      {template.name || template.Name}
+                      {template.description && ` - ${template.description}`}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
             <FormField
               label="Product Name"
               required
@@ -271,7 +396,6 @@ const Products = () => {
               onChange={(e) => setProductForm(prev => ({ ...prev, name: e.target.value }))}
               placeholder="e.g., Digital Download, Print Package"
             />
-            
             <FormField
               label="Category"
               required
@@ -329,13 +453,26 @@ const Products = () => {
               </div>
             </div>
           </ModalContent>
-          <ModalFooter>
-            <Button type="button" variant="outline" onClick={resetForm}>
-              Cancel
-            </Button>
-            <Button type="submit">
-              {editingProduct ? "Update Product" : "Create Product"}
-            </Button>
+<ModalFooter>
+            <div className="flex justify-between w-full">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleSaveAsTemplate}
+                disabled={!productForm.name || productForm.sizes.length === 0}
+              >
+                <ApperIcon name="Save" size={14} className="mr-1" />
+                Save as Template
+              </Button>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={resetForm}>
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  {editingProduct ? "Update Product" : "Create Product"}
+                </Button>
+              </div>
+            </div>
           </ModalFooter>
         </form>
       </Modal>
