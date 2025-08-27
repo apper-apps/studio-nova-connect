@@ -55,8 +55,8 @@ const CurrentSession = () => {
       setGallery(galleryData);
       setProducts(productsData);
       
-      if (galleryData.clientId) {
-        const clientData = await clientService.getById(galleryData.clientId);
+if (galleryData.client_id_c) {
+        const clientData = await clientService.getById(galleryData.client_id_c);
         setClient(clientData);
       }
     } catch (err) {

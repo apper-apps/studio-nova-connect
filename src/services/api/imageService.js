@@ -101,8 +101,8 @@ class ImageService {
           proofing_url_c: imageData.proofingUrl || imageData.proofing_url_c,
           thumbnail_url_c: imageData.thumbnailUrl || imageData.thumbnail_url_c,
           rating_c: imageData.rating || imageData.rating_c || "unrated",
-          order_c: imageData.order || imageData.order_c || 1,
-          gallery_id_c: parseInt(imageData.galleryId || imageData.gallery_id_c)
+order_c: imageData.order_c || imageData.order || 1,
+          gallery_id_c: parseInt(imageData.gallery_id_c || imageData.galleryId)
         }]
       };
 

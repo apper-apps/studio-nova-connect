@@ -96,10 +96,10 @@ const gallery = {
         records: [{
 // Only include updateable fields
           Name: galleryData.name || galleryData.Name,
-          client_id_c: parseInt(galleryData.clientId || galleryData.client_id_c),
-          session_date_c: galleryData.sessionDate || galleryData.session_date_c,
+          client_id_c: parseInt(galleryData.client_id_c || galleryData.clientId),
+          session_date_c: galleryData.session_date_c || galleryData.sessionDate,
           created_at_c: new Date().toISOString(),
-          shareable_url_c: galleryData.shareableUrl || null
+          shareable_url_c: galleryData.shareable_url_c || galleryData.shareableUrl || null
         }]
       };
 
@@ -141,11 +141,11 @@ const createdGallery = {
       const params = {
 records: [{
           Id: parseInt(id),
-          // Only include updateable fields
+// Only include updateable fields
           Name: galleryData.name || galleryData.Name,
-          client_id_c: parseInt(galleryData.clientId || galleryData.client_id_c),
-          session_date_c: galleryData.sessionDate || galleryData.session_date_c,
-          shareable_url_c: galleryData.shareableUrl || galleryData.shareable_url_c
+          client_id_c: parseInt(galleryData.client_id_c || galleryData.clientId),
+          session_date_c: galleryData.session_date_c || galleryData.sessionDate,
+          shareable_url_c: galleryData.shareable_url_c || galleryData.shareableUrl
         }]
       };
 

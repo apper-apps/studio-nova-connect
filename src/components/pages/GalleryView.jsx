@@ -51,8 +51,8 @@ const loadGallery = async () => {
       const galleryData = await galleryService.getById(parseInt(id));
       setGallery(galleryData);
       
-      if (galleryData.clientId) {
-        const clientData = await clientService.getById(galleryData.clientId);
+if (galleryData.client_id_c) {
+        const clientData = await clientService.getById(galleryData.client_id_c);
         setClient(clientData);
       }
     } catch (err) {
@@ -344,7 +344,7 @@ try {
           )}
           
           <Button
-            onClick={() => navigate(`/session?galleryId=${gallery.id}`)}
+onClick={() => navigate(`/session?galleryId=${gallery.Id}`)}
             className="flex items-center gap-2"
           >
             <ApperIcon name="Play" size={16} />
