@@ -1,20 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import Button from "@/components/atoms/Button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/atoms/Card";
-import FormField from "@/components/molecules/FormField";
-import ApperIcon from "@/components/ApperIcon";
-import Loading from "@/components/ui/Loading";
-import { authService } from "@/services/authService";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/atoms/Card";
+import { useSelector } from "react-redux";
 import { subscriptionService } from "@/services/subscriptionService";
+import { authService } from "@/services/authService";
 import { format } from "date-fns";
+import ApperIcon from "@/components/ApperIcon";
+import FormField from "@/components/molecules/FormField";
+import Button from "@/components/atoms/Button";
+import Subscription from "@/components/pages/Subscription";
+import Error from "@/components/ui/Error";
+import Loading from "@/components/ui/Loading";
 
 const Settings = () => {
-  const [loading, setLoading] = useState(false);
+const [loading, setLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
   const [subscriptionDetails, setSubscriptionDetails] = useState(null);
-  const { user, subscription } = authService.useAuth();
-  
+  const { user } = useSelector((state) => state.user);
+  const subscription = null; // Subscription will be loaded from subscriptionService
   const [profileForm, setProfileForm] = useState({
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
