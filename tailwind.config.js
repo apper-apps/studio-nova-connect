@@ -1,26 +1,60 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
-theme: {
+  theme: {
     extend: {
       fontFamily: {
         'inter': ['Inter', 'sans-serif'],
       },
       colors: {
-        primary: '#1a1a1a',
-        secondary: '#2d2d2d',
-        accent: '#4a90e2',
+        primary: {
+          DEFAULT: '#1a1a1a',
+          dark: '#ffffff',
+        },
+        secondary: {
+          DEFAULT: '#2d2d2d',
+          dark: '#1f2937',
+        },
+        accent: {
+          DEFAULT: '#4a90e2',
+          dark: '#60a5fa',
+        },
         'accent-foreground': '#ffffff',
-        surface: '#f5f5f5',
-        success: '#27ae60',
+        surface: {
+          DEFAULT: '#f5f5f5',
+          50: '#fafafa',
+          100: '#f5f5f5',
+          200: '#e5e5e5',
+          300: '#d4d4d4',
+          400: '#a3a3a3',
+          500: '#737373',
+          600: '#525252',
+          700: '#404040',
+          800: '#262626',
+          900: '#171717',
+        },
+        success: {
+          DEFAULT: '#27ae60',
+          dark: '#34d399',
+        },
         'success-foreground': '#ffffff',
-        warning: '#f39c12',
+        warning: {
+          DEFAULT: '#f39c12',
+          dark: '#fbbf24',
+        },
         'warning-foreground': '#ffffff',
-        error: '#e74c3c',
-        info: '#3498db',
+        error: {
+          DEFAULT: '#e74c3c',
+          dark: '#f87171',
+        },
+        info: {
+          DEFAULT: '#3498db',
+          dark: '#60a5fa',
+        },
       },
       backdropBlur: {
         'xs': '2px',

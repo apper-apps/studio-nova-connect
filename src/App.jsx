@@ -49,9 +49,27 @@ function AppContent() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
+const [isInitialized, setIsInitialized] = useState(false);
   const [ipsMode, setIpsMode] = useState('gallery');
+  const [theme, setTheme] = useState(() => {
+    const savedTheme = localStorage.getItem('theme');
+    return savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  });
   
+  // Apply theme to document
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+  };
   // Get authentication status with proper error handling
   const userState = useSelector((state) => state.user);
   const isAuthenticated = userState?.isAuthenticated || false;
@@ -127,8 +145,10 @@ function AppContent() {
   }, [navigate, dispatch]);
   
   // Authentication methods to share via context
-  const authMethods = {
+const authMethods = {
     isInitialized,
+    theme,
+    toggleTheme,
     logout: async () => {
       try {
         const { ApperUI } = window.ApperSDK;
@@ -148,7 +168,7 @@ function AppContent() {
 if (!isAuthenticated) {
     return (
       <AuthContext.Provider value={authMethods}>
-        <div className="min-h-screen">
+<div className="min-h-screen bg-white dark:bg-slate-900 transition-colors duration-300">
 <Routes>
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
@@ -178,7 +198,7 @@ if (!isAuthenticated) {
 
   return (
     <AuthContext.Provider value={authMethods}>
-      <div className="flex h-screen bg-surface-50">
+<div className="flex h-screen bg-surface-50 dark:bg-slate-900 transition-colors duration-300">
         {/* Sidebar */}
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         
@@ -190,7 +210,7 @@ if (!isAuthenticated) {
             ipsMode={ipsMode}
             onModeChange={setIpsMode}
           />
-          <main className="flex-1 overflow-hidden bg-surface-50">
+<main className="flex-1 overflow-hidden bg-surface-50 dark:bg-slate-900 transition-colors duration-300">
             <Routes>
               <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/galleries" element={<ProtectedRoute><Galleries /></ProtectedRoute>} />
