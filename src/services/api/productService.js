@@ -152,14 +152,13 @@ let sizes = [];
 
       const response = await this.apperClient.updateRecord(this.tableName, params);
       
-      if (!response.success) {
+if (!response.success) {
         console.error(response.message);
-        throw new Error(response.message);
+        return null;
       }
 
       if (response.results) {
         const failedRecords = response.results.filter(result => !result.success);
-        
         if (failedRecords.length > 0) {
           console.error(`Failed to update product ${failedRecords.length} records:${JSON.stringify(failedRecords)}`);
           throw new Error(failedRecords[0].message || 'Failed to update product');

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/atoms/Card";
 import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@/components/atoms/Modal";
 import ApperIcon from "@/components/ApperIcon";

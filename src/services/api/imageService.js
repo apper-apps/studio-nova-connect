@@ -64,14 +64,13 @@ async update(imageId, data) {
 
       const response = await this.apperClient.updateRecord(this.tableName, params);
       
-      if (!response.success) {
+if (!response.success) {
         console.error(response.message);
-        throw new Error(response.message);
+        return null;
       }
 
       if (response.results) {
         const failedRecords = response.results.filter(result => !result.success);
-        
         if (failedRecords.length > 0) {
           console.error(`Failed to update image ${failedRecords.length} records:${JSON.stringify(failedRecords)}`);
           throw new Error(failedRecords[0].message || 'Failed to update image');
@@ -96,14 +95,13 @@ async update(imageId, data) {
 
       const response = await this.apperClient.updateRecord(this.tableName, params);
       
-      if (!response.success) {
+if (!response.success) {
         console.error(response.message);
-        throw new Error(response.message);
+        return null;
       }
 
       if (response.results) {
         const failedRecords = response.results.filter(result => !result.success);
-        
         if (failedRecords.length > 0) {
           console.error(`Failed to update image rating ${failedRecords.length} records:${JSON.stringify(failedRecords)}`);
           throw new Error(failedRecords[0].message || 'Failed to update image rating');
